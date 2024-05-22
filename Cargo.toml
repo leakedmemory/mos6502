@@ -1,0 +1,10 @@
+[package]
+name = "mos6502"
+edition = "2021"
+description = "An emulator for the MOS Technology 6502 made for learning purposes"
+readme = "README.md"
+license = "MIT"
+license-file = "LICENSE"
+keywords = ["emulator", "6502"]
+
+[dependencies]
