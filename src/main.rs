@@ -1,10 +1,12 @@
-use mos6502::cpu::{Memory, CPU, MEMORY_SIZE};
+use mos6502::cpu::CPU;
+use mos6502::memory::Memory;
 
 fn main() -> ! {
-    let mut memory: Memory = [0u8; MEMORY_SIZE];
+    let mut memory = Memory::new();
     let mut cpu = CPU::new();
+    cpu.reset(&memory);
     loop {
-        let opcode = cpu.fetch_instruction(&memory);
+        let opcode = cpu.fetch_byte(&memory);
         cpu.execute(&mut memory, opcode);
     }
 }
