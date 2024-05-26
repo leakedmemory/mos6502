@@ -8,6 +8,7 @@ pub const CSF_BREAK_COMMAND: u8 = 0x10;
 pub const CSF_OVERFLOW: u8 = 0x40;
 pub const CSF_NEGATIVE: u8 = 0x80;
 
+const SYS_STACK_ADDR_END: u16 = 0x100;
 #[allow(dead_code)]
 const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200; // used only in tests for now
 pub(crate) const POWER_ON_RESET_ADDR_L: u16 = 0xFFFC;
@@ -19,9 +20,17 @@ const CPU_DEFAULT_Y: u8 = 0;
 const CPU_DEFAULT_SP: u8 = 0xFF;
 const CPU_DEFAULT_STATUS: u8 = 0x20;
 
+// ============= OPCODES START =============
+
+// JSR
+const OPCODE_JSR: u8 = 0x20;
+
+// LDA
 const OPCODE_LDA_IMM: u8 = 0xA9;
 const OPCODE_LDA_ZPG: u8 = 0xA5;
 const OPCODE_LDA_ZPX: u8 = 0xB5;
+
+// ============= OPCODES END ==============
 
 /// ps register: NV1B DIZC
 pub struct CPU<'m> {
@@ -67,6 +76,7 @@ impl<'m> CPU<'m> {
 
     pub fn execute(&mut self, opcode: u8) {
         match opcode {
+            OPCODE_JSR => self.jsr(),
             OPCODE_LDA_IMM => self.lda_immediate(),
             OPCODE_LDA_ZPG => self.lda_zero_page(),
             OPCODE_LDA_ZPX => self.lda_zero_page_x(),
@@ -74,7 +84,7 @@ impl<'m> CPU<'m> {
         }
     }
 
-    /// gets a byte from program counter and increments it consuming 1 cycle
+    /// gets a byte from program counter and increments it, in 1 cycle
     pub fn fetch_byte(&mut self) -> u8 {
         let byte = self.memory.get(self.pc);
         self.increment_pc();
@@ -82,17 +92,53 @@ impl<'m> CPU<'m> {
         byte
     }
 
-    /// gets a byte from addr consuming 1 cycle
+    /// gets a byte from addr in 1 cycle
     fn read_byte(&mut self, addr: u16) -> u8 {
         let byte = self.memory.get(addr);
         self.cycles += 1;
         byte
     }
 
+    /// gets an addr from the program counter and increments it by 2,
+    /// in 2 cycles
+    fn fetch_addr(&mut self) -> u16 {
+        let addr_l = self.fetch_byte() as u16;
+        let addr_h = self.fetch_byte() as u16;
+        (addr_h << 8) | addr_l
+    }
+
     #[inline]
     fn increment_pc(&mut self) {
         self.pc = self.pc.wrapping_add(1);
     }
+
+    /// pushes an addr to the stack, wrapping around when overflowing or
+    /// underflowing, in 2 cycles
+    fn push_addr_to_stack(&mut self, addr: u16) {
+        let mut sp = (self.sp as u16) | SYS_STACK_ADDR_END;
+        let addr_l = addr as u8;
+        let addr_h = (addr >> 8) as u8;
+        self.memory.set(addr_h, sp);
+        self.sp = self.sp.wrapping_sub(1);
+        sp = (self.sp as u16) | SYS_STACK_ADDR_END;
+        self.memory.set(addr_l, sp);
+        self.sp = self.sp.wrapping_sub(1);
+        self.cycles += 2;
+    }
+
+    // ============= JSR =============
+
+    /// bytes: 3
+    /// cycles: 6
+    /// flags affected: none
+    fn jsr(&mut self) {
+        let addr = self.fetch_addr();
+        self.push_addr_to_stack(self.pc - 1);
+        self.pc = addr; // takes 1 cycle
+        self.cycles += 1;
+    }
+
+    // ============= LDA =============
 
     fn lda_set_status(&mut self, byte: u8) {
         if byte == 0 {
@@ -147,6 +193,36 @@ mod tests {
     use crate::memory::Memory;
 
     #[test]
+    fn jsr_test() {
+        const BYTES: u16 = 3;
+        const CYCLES: u64 = 6;
+        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+
+        let mut memory = Memory::new();
+        memory.set(OPCODE_JSR, MEMORY_OFFSET);
+        memory.set(0x42, MEMORY_OFFSET + 1);
+        memory.set(0x30, MEMORY_OFFSET + 2);
+        memory.set(OPCODE_LDA_IMM, 0x3042);
+
+        let mut cpu = CPU::new(&mut memory);
+        cpu.reset();
+
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(cpu.pc, 0x3042);
+        assert_eq!(cpu.memory.get(cpu.pc), OPCODE_LDA_IMM);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
+        assert_eq!(cpu.sp, CPU_DEFAULT_SP - 2);
+
+        let stack_pc_l = cpu.memory.get(((cpu.sp + 1) as u16) | SYS_STACK_ADDR_END) as u16;
+        let stack_pc_h = cpu.memory.get(((cpu.sp + 2) as u16) | SYS_STACK_ADDR_END) as u16;
+        let stack_pc = (stack_pc_h << 8) | stack_pc_l;
+        assert_eq!(stack_pc + 1 - init_pc, BYTES);
+    }
+
+    #[test]
     fn lda_immediate_test() {
         const BYTES: u16 = 2;
         const CYCLES: u64 = 2;
@@ -163,33 +239,33 @@ mod tests {
         let mut cpu = CPU::new(&mut memory);
         cpu.reset();
 
-        let mut saved_pc = cpu.pc;
-        let mut saved_cycles = cpu.cycles;
-        let mut opcode = cpu.fetch_byte();
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x42, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x00, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert!(cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x80, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(cpu.flag_is_set(CSF_NEGATIVE));
     }
@@ -214,33 +290,33 @@ mod tests {
         let mut cpu = CPU::new(&mut memory);
         cpu.reset();
 
-        let mut saved_pc = cpu.pc;
-        let mut saved_cycles = cpu.cycles;
-        let mut opcode = cpu.fetch_byte();
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x32, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x00, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert!(cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x80, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(cpu.flag_is_set(CSF_NEGATIVE));
     }
@@ -267,33 +343,33 @@ mod tests {
         cpu.reset();
         cpu.x = X;
 
-        let mut saved_pc = cpu.pc;
-        let mut saved_cycles = cpu.cycles;
-        let mut opcode = cpu.fetch_byte();
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x32, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x00, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert!(cpu.flag_is_set(CSF_ZERO));
         assert!(!cpu.flag_is_set(CSF_NEGATIVE));
 
-        saved_pc = cpu.pc;
-        saved_cycles = cpu.cycles;
-        opcode = cpu.fetch_byte();
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x80, cpu.acc);
-        assert_eq!(cpu.pc - saved_pc, BYTES);
-        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert!(!cpu.flag_is_set(CSF_ZERO));
         assert!(cpu.flag_is_set(CSF_NEGATIVE));
     }
