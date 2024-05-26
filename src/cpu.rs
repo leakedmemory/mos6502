@@ -32,7 +32,7 @@ const OPCODE_LDA_ZPX: u8 = 0xB5;
 
 // ============= OPCODES END ==============
 
-/// ps register: NV1B DIZC
+/// status register: NV1B DIZC
 pub struct CPU {
     acc: u8,
     x: u8,
@@ -215,6 +215,7 @@ mod tests {
         assert_eq!(cpu.memory.get(cpu.pc), OPCODE_LDA_IMM);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.sp, CPU_DEFAULT_SP - 2);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
 
         let stack_pc_l = cpu.memory.get(((cpu.sp + 1) as u16) | SYS_STACK_ADDR_END) as u16;
         let stack_pc_h = cpu.memory.get(((cpu.sp + 2) as u16) | SYS_STACK_ADDR_END) as u16;
@@ -246,8 +247,7 @@ mod tests {
         assert_eq!(0x42, cpu.acc);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
@@ -256,8 +256,7 @@ mod tests {
         assert_eq!(0x00, cpu.acc);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
-        assert!(cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
@@ -266,8 +265,7 @@ mod tests {
         assert_eq!(0x80, cpu.acc);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
     }
 
     #[test]
@@ -297,8 +295,7 @@ mod tests {
         assert_eq!(0x32, cpu.acc);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
@@ -307,8 +304,7 @@ mod tests {
         assert_eq!(0x00, cpu.acc);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
-        assert!(cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
@@ -317,8 +313,7 @@ mod tests {
         assert_eq!(0x80, cpu.acc);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
     }
 
     #[test]
@@ -350,8 +345,7 @@ mod tests {
         assert_eq!(0x32, cpu.acc);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
@@ -360,8 +354,7 @@ mod tests {
         assert_eq!(0x00, cpu.acc);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
-        assert!(cpu.flag_is_set(CSF_ZERO));
-        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
@@ -370,7 +363,6 @@ mod tests {
         assert_eq!(0x80, cpu.acc);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
-        assert!(!cpu.flag_is_set(CSF_ZERO));
-        assert!(cpu.flag_is_set(CSF_NEGATIVE));
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
     }
 }
