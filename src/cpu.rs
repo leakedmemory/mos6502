@@ -33,7 +33,7 @@ const OPCODE_LDA_ZPX: u8 = 0xB5;
 // ============= OPCODES END ==============
 
 /// ps register: NV1B DIZC
-pub struct CPU<'m> {
+pub struct CPU {
     acc: u8,
     x: u8,
     y: u8,
@@ -41,11 +41,11 @@ pub struct CPU<'m> {
     pc: u16,
     status: u8,
     cycles: u64,
-    memory: &'m mut Memory,
+    memory: Memory,
 }
 
-impl<'m> CPU<'m> {
-    pub fn new(memory: &'m mut Memory) -> Self {
+impl CPU {
+    pub fn new(memory: Memory) -> Self {
         Self {
             acc: 0,
             x: 0,
@@ -204,7 +204,7 @@ mod tests {
         memory.set(0x30, MEMORY_OFFSET + 2);
         memory.set(OPCODE_LDA_IMM, 0x3042);
 
-        let mut cpu = CPU::new(&mut memory);
+        let mut cpu = CPU::new(memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -236,7 +236,7 @@ mod tests {
         memory.set(OPCODE_LDA_IMM, MEMORY_OFFSET + 4);
         memory.set(0x80, MEMORY_OFFSET + 5);
 
-        let mut cpu = CPU::new(&mut memory);
+        let mut cpu = CPU::new(memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -287,7 +287,7 @@ mod tests {
         memory.set(0x69, MEMORY_OFFSET + 5);
         memory.set(0x80, 0x69);
 
-        let mut cpu = CPU::new(&mut memory);
+        let mut cpu = CPU::new(memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -339,7 +339,7 @@ mod tests {
         memory.set(0x69, MEMORY_OFFSET + 5);
         memory.set(0x80, X.wrapping_add(0x69).into());
 
-        let mut cpu = CPU::new(&mut memory);
+        let mut cpu = CPU::new(memory);
         cpu.reset();
         cpu.x = X;
 
