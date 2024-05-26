@@ -1,4 +1,4 @@
-use crate::cpu::POWER_ON_RESET;
+use crate::cpu::{POWER_ON_RESET_ADDR_H, POWER_ON_RESET_ADDR_L};
 
 // 16-bit address bus == 2^16 == 64KB
 const MEMORY_SIZE: usize = 64 * 1024;
@@ -10,8 +10,8 @@ pub struct Memory {
 impl Memory {
     pub fn new() -> Self {
         let mut memory = [0; MEMORY_SIZE];
-        memory[POWER_ON_RESET as usize] = 0x00;
-        memory[(POWER_ON_RESET + 1) as usize] = 0x02;
+        memory[POWER_ON_RESET_ADDR_L as usize] = 0x00;
+        memory[POWER_ON_RESET_ADDR_H as usize] = 0x02;
 
         Self { memory }
     }

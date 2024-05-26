@@ -3,10 +3,10 @@ use mos6502::memory::Memory;
 
 fn main() -> ! {
     let mut memory = Memory::new();
-    let mut cpu = CPU::new();
-    cpu.reset(&memory);
+    let mut cpu = CPU::new(&mut memory);
+    cpu.reset();
     loop {
-        let opcode = cpu.fetch_byte(&memory);
-        cpu.execute(&mut memory, opcode);
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
     }
 }
