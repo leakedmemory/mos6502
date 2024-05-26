@@ -21,6 +21,7 @@ const CPU_DEFAULT_STATUS: u8 = 0x20;
 
 const OPCODE_LDA_IMM: u8 = 0xA9;
 const OPCODE_LDA_ZPG: u8 = 0xA5;
+const OPCODE_LDA_ZPX: u8 = 0xB5;
 
 /// ps register: NV1B DIZC
 pub struct CPU<'m> {
@@ -68,6 +69,7 @@ impl<'m> CPU<'m> {
         match opcode {
             OPCODE_LDA_IMM => self.lda_immediate(),
             OPCODE_LDA_ZPG => self.lda_zero_page(),
+            OPCODE_LDA_ZPX => self.lda_zero_page_x(),
             _ => panic!("invalid opcode: {:#X}", opcode),
         }
     }
@@ -116,6 +118,18 @@ impl<'m> CPU<'m> {
     /// flags affected: N and Z
     fn lda_zero_page(&mut self) {
         let addr = self.fetch_byte();
+        let acc = self.read_byte(addr.into());
+        self.acc = acc;
+        self.lda_set_status(acc);
+    }
+
+    /// bytes: 2
+    /// cycles: 4
+    /// flags affected: N and Z
+    fn lda_zero_page_x(&mut self) {
+        let byte = self.fetch_byte();
+        let addr = self.x.wrapping_add(byte);
+        self.cycles += 1;
         let acc = self.read_byte(addr.into());
         self.acc = acc;
         self.lda_set_status(acc);
@@ -199,6 +213,59 @@ mod tests {
 
         let mut cpu = CPU::new(&mut memory);
         cpu.reset();
+
+        let mut saved_pc = cpu.pc;
+        let mut saved_cycles = cpu.cycles;
+        let mut opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x32, cpu.acc);
+        assert_eq!(cpu.pc - saved_pc, BYTES);
+        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert!(!cpu.flag_is_set(CSF_ZERO));
+        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+
+        saved_pc = cpu.pc;
+        saved_cycles = cpu.cycles;
+        opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x00, cpu.acc);
+        assert_eq!(cpu.pc - saved_pc, BYTES);
+        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert!(cpu.flag_is_set(CSF_ZERO));
+        assert!(!cpu.flag_is_set(CSF_NEGATIVE));
+
+        saved_pc = cpu.pc;
+        saved_cycles = cpu.cycles;
+        opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x80, cpu.acc);
+        assert_eq!(cpu.pc - saved_pc, BYTES);
+        assert_eq!(cpu.cycles - saved_cycles, CYCLES);
+        assert!(!cpu.flag_is_set(CSF_ZERO));
+        assert!(cpu.flag_is_set(CSF_NEGATIVE));
+    }
+
+    #[test]
+    fn lda_zero_page_x_test() {
+        const BYTES: u16 = 2;
+        const CYCLES: u64 = 4;
+        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const X: u8 = 0xAC;
+
+        let mut memory = Memory::new();
+        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET);
+        memory.set(0x42, MEMORY_OFFSET + 1);
+        memory.set(0x32, X.wrapping_add(0x42).into());
+        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET + 2);
+        memory.set(0x57, MEMORY_OFFSET + 3);
+        memory.set(0x00, X.wrapping_add(0x57).into());
+        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET + 4);
+        memory.set(0x69, MEMORY_OFFSET + 5);
+        memory.set(0x80, X.wrapping_add(0x69).into());
+
+        let mut cpu = CPU::new(&mut memory);
+        cpu.reset();
+        cpu.x = X;
 
         let mut saved_pc = cpu.pc;
         let mut saved_cycles = cpu.cycles;
