@@ -1,16 +1,9 @@
 use crate::memory::Memory;
 
-pub const CSF_CARRY: u8 = 0x01;
-pub const CSF_ZERO: u8 = 0x02;
-pub const CSF_INTERRUPT_DISABLE: u8 = 0x04;
-pub const CSF_DECIMAL_MODE: u8 = 0x08;
-pub const CSF_BREAK_COMMAND: u8 = 0x10;
-pub const CSF_OVERFLOW: u8 = 0x40;
-pub const CSF_NEGATIVE: u8 = 0x80;
+const CSF_ZERO: u8 = 0x02;
+const CSF_NEGATIVE: u8 = 0x80;
 
 const SYS_STACK_ADDR_END: u16 = 0x100;
-#[allow(dead_code)]
-const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200; // used only in tests for now
 pub(crate) const POWER_ON_RESET_ADDR_L: u16 = 0xFFFC;
 pub(crate) const POWER_ON_RESET_ADDR_H: u16 = 0xFFFD;
 
@@ -34,7 +27,6 @@ const OPCODE_LDA_ABX: u8 = 0xBD;
 
 // ============= OPCODES END ==============
 
-/// status register: NV1B DIZC
 pub struct CPU {
     acc: u8,
     x: u8,
@@ -71,11 +63,6 @@ impl CPU {
         self.cycles = 7;
     }
 
-    #[inline]
-    pub fn flag_is_set(&self, flag: u8) -> bool {
-        self.status & flag != 0
-    }
-
     pub fn execute(&mut self, opcode: u8) {
         match opcode {
             OPCODE_JSR => self.jsr(),
@@ -96,6 +83,11 @@ impl CPU {
         byte
     }
 
+    #[inline]
+    fn increment_pc(&mut self) {
+        self.pc = self.pc.wrapping_add(1);
+    }
+
     /// gets a byte from addr in 1 cycle
     fn read_byte(&mut self, addr: u16) -> u8 {
         let byte = self.memory.get(addr);
@@ -109,11 +101,6 @@ impl CPU {
         let addr_l = self.fetch_byte() as u16;
         let addr_h = self.fetch_byte() as u16;
         (addr_h << 8) | addr_l
-    }
-
-    #[inline]
-    fn increment_pc(&mut self) {
-        self.pc = self.pc.wrapping_add(1);
     }
 
     /// pushes an addr to the stack, wrapping around when overflowing or
@@ -130,9 +117,14 @@ impl CPU {
         self.cycles += 2;
     }
 
+    #[inline(always)]
+    fn byte_is_negative_int(byte: u8) -> bool {
+        byte & 0x80 != 0
+    }
+
     // often used to know the need of another add operation with the high 8 bits
     // of the address, since the 6502's adder circuit only works with 8 bits
-    #[inline]
+    #[inline(always)]
     fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
         (addr_a & 0xFF00) != (addr_b & 0xFF00)
     }
@@ -210,11 +202,6 @@ impl CPU {
         self.acc = self.read_byte(addr);
         self.lda_set_status();
     }
-
-    #[inline(always)]
-    fn byte_is_negative_int(byte: u8) -> bool {
-        byte & 0x80 != 0
-    }
 }
 
 #[cfg(test)]
@@ -222,16 +209,18 @@ mod tests {
     use super::*;
     use crate::memory::Memory;
 
+    const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200;
+
     #[test]
     fn jsr_test() {
         const BYTES: u16 = 3;
         const CYCLES: u64 = 6;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_JSR, MEMORY_OFFSET);
-        memory.set(0x42, MEMORY_OFFSET + 1);
-        memory.set(0x30, MEMORY_OFFSET + 2);
+        memory.set(OPCODE_JSR, MEM_OFFSET);
+        memory.set(0x42, MEM_OFFSET + 1);
+        memory.set(0x30, MEM_OFFSET + 2);
         memory.set(OPCODE_LDA_IMM, 0x3042);
 
         let mut cpu = CPU::new(memory);
@@ -257,15 +246,15 @@ mod tests {
     fn lda_immediate_test() {
         const BYTES: u16 = 2;
         const CYCLES: u64 = 2;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_IMM, MEMORY_OFFSET);
-        memory.set(0x42, MEMORY_OFFSET + 1);
-        memory.set(OPCODE_LDA_IMM, MEMORY_OFFSET + 2);
-        memory.set(0x00, MEMORY_OFFSET + 3);
-        memory.set(OPCODE_LDA_IMM, MEMORY_OFFSET + 4);
-        memory.set(0x80, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_IMM, MEM_OFFSET);
+        memory.set(0x42, MEM_OFFSET + 1);
+        memory.set(OPCODE_LDA_IMM, MEM_OFFSET + 2);
+        memory.set(0x00, MEM_OFFSET + 3);
+        memory.set(OPCODE_LDA_IMM, MEM_OFFSET + 4);
+        memory.set(0x80, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(memory);
         cpu.reset();
@@ -302,17 +291,17 @@ mod tests {
     fn lda_zero_page_test() {
         const BYTES: u16 = 2;
         const CYCLES: u64 = 3;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_ZPG, MEMORY_OFFSET);
-        memory.set(0x42, MEMORY_OFFSET + 1);
+        memory.set(OPCODE_LDA_ZPG, MEM_OFFSET);
+        memory.set(0x42, MEM_OFFSET + 1);
         memory.set(0x32, 0x42);
-        memory.set(OPCODE_LDA_ZPG, MEMORY_OFFSET + 2);
-        memory.set(0x57, MEMORY_OFFSET + 3);
+        memory.set(OPCODE_LDA_ZPG, MEM_OFFSET + 2);
+        memory.set(0x57, MEM_OFFSET + 3);
         memory.set(0x00, 0x57);
-        memory.set(OPCODE_LDA_ZPG, MEMORY_OFFSET + 4);
-        memory.set(0x69, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_ZPG, MEM_OFFSET + 4);
+        memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, 0x69);
 
         let mut cpu = CPU::new(memory);
@@ -350,18 +339,18 @@ mod tests {
     fn lda_zero_page_x_test() {
         const BYTES: u16 = 2;
         const CYCLES: u64 = 4;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
         const X: u8 = 0xAC;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET);
-        memory.set(0x42, MEMORY_OFFSET + 1);
+        memory.set(OPCODE_LDA_ZPX, MEM_OFFSET);
+        memory.set(0x42, MEM_OFFSET + 1);
         memory.set(0x32, X.wrapping_add(0x42).into());
-        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET + 2);
-        memory.set(0x57, MEMORY_OFFSET + 3);
+        memory.set(OPCODE_LDA_ZPX, MEM_OFFSET + 2);
+        memory.set(0x57, MEM_OFFSET + 3);
         memory.set(0x00, X.wrapping_add(0x57).into());
-        memory.set(OPCODE_LDA_ZPX, MEMORY_OFFSET + 4);
-        memory.set(0x69, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_ZPX, MEM_OFFSET + 4);
+        memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, X.wrapping_add(0x69).into());
 
         let mut cpu = CPU::new(memory);
@@ -400,20 +389,20 @@ mod tests {
     fn lda_absolute_test() {
         const BYTES: u16 = 3;
         const CYCLES: u64 = 4;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET);
-        memory.set(0x28, MEMORY_OFFSET + 1);
-        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(OPCODE_LDA_ABS, MEM_OFFSET);
+        memory.set(0x28, MEM_OFFSET + 1);
+        memory.set(0x80, MEM_OFFSET + 2);
         memory.set(0x42, 0x8028);
-        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET + 3);
-        memory.set(0x97, MEMORY_OFFSET + 4);
-        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_ABS, MEM_OFFSET + 3);
+        memory.set(0x97, MEM_OFFSET + 4);
+        memory.set(0x26, MEM_OFFSET + 5);
         memory.set(0x00, 0x2697);
-        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET + 6);
-        memory.set(0x70, MEMORY_OFFSET + 7);
-        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(OPCODE_LDA_ABS, MEM_OFFSET + 6);
+        memory.set(0x70, MEM_OFFSET + 7);
+        memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, 0x5570);
 
         let mut cpu = CPU::new(memory);
@@ -451,21 +440,21 @@ mod tests {
     fn lda_absolute_x_without_page_crossing() {
         const BYTES: u16 = 3;
         const CYCLES: u64 = 4;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
         const X: u8 = 0xAC;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET);
-        memory.set(0x28, MEMORY_OFFSET + 1);
-        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET);
+        memory.set(0x28, MEM_OFFSET + 1);
+        memory.set(0x80, MEM_OFFSET + 2);
         memory.set(0x42, 0x8028 + X as u16);
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 3);
-        memory.set(0x53, MEMORY_OFFSET + 4);
-        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET + 3);
+        memory.set(0x53, MEM_OFFSET + 4);
+        memory.set(0x26, MEM_OFFSET + 5);
         memory.set(0x00, 0x2653 + X as u16);
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 6);
-        memory.set(0x22, MEMORY_OFFSET + 7);
-        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET + 6);
+        memory.set(0x22, MEM_OFFSET + 7);
+        memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, 0x5522 + X as u16);
 
         let mut cpu = CPU::new(memory);
@@ -504,21 +493,21 @@ mod tests {
     fn lda_absolute_x_with_page_crossing() {
         const BYTES: u16 = 3;
         const CYCLES: u64 = 5;
-        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
         const X: u8 = 0xAC;
 
         let mut memory = Memory::new();
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET);
-        memory.set(0x60, MEMORY_OFFSET + 1);
-        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET);
+        memory.set(0x60, MEM_OFFSET + 1);
+        memory.set(0x80, MEM_OFFSET + 2);
         memory.set(0x42, 0x8060 + X as u16);
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 3);
-        memory.set(0x54, MEMORY_OFFSET + 4);
-        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET + 3);
+        memory.set(0x54, MEM_OFFSET + 4);
+        memory.set(0x26, MEM_OFFSET + 5);
         memory.set(0x00, 0x2654 + X as u16);
-        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 6);
-        memory.set(0x83, MEMORY_OFFSET + 7);
-        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(OPCODE_LDA_ABX, MEM_OFFSET + 6);
+        memory.set(0x83, MEM_OFFSET + 7);
+        memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, 0x5583 + X as u16);
 
         let mut cpu = CPU::new(memory);
