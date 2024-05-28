@@ -29,6 +29,7 @@ const OPCODE_JSR: u8 = 0x20;
 const OPCODE_LDA_IMM: u8 = 0xA9;
 const OPCODE_LDA_ZPG: u8 = 0xA5;
 const OPCODE_LDA_ZPX: u8 = 0xB5;
+const OPCODE_LDA_ABS: u8 = 0xAD;
 
 // ============= OPCODES END ==============
 
@@ -80,11 +81,12 @@ impl CPU {
             OPCODE_LDA_IMM => self.lda_immediate(),
             OPCODE_LDA_ZPG => self.lda_zero_page(),
             OPCODE_LDA_ZPX => self.lda_zero_page_x(),
+            OPCODE_LDA_ABS => self.lda_absolute(),
             _ => panic!("invalid opcode: {:#X}", opcode),
         }
     }
 
-    /// gets a byte from program counter and increments it, in 1 cycle
+    /// gets a byte from program counter and increments it in 1 cycle
     pub fn fetch_byte(&mut self) -> u8 {
         let byte = self.memory.get(self.pc);
         self.increment_pc();
@@ -154,9 +156,8 @@ impl CPU {
     /// cycles: 2
     /// flags affected: N and Z
     fn lda_immediate(&mut self) {
-        let acc = self.fetch_byte();
-        self.acc = acc;
-        self.lda_set_status(acc);
+        self.acc = self.fetch_byte();
+        self.lda_set_status(self.acc);
     }
 
     /// bytes: 2
@@ -164,9 +165,8 @@ impl CPU {
     /// flags affected: N and Z
     fn lda_zero_page(&mut self) {
         let addr = self.fetch_byte();
-        let acc = self.read_byte(addr.into());
-        self.acc = acc;
-        self.lda_set_status(acc);
+        self.acc = self.read_byte(addr.into());
+        self.lda_set_status(self.acc);
     }
 
     /// bytes: 2
@@ -176,9 +176,17 @@ impl CPU {
         let byte = self.fetch_byte();
         let addr = self.x.wrapping_add(byte);
         self.cycles += 1;
-        let acc = self.read_byte(addr.into());
-        self.acc = acc;
-        self.lda_set_status(acc);
+        self.acc = self.read_byte(addr.into());
+        self.lda_set_status(self.acc);
+    }
+
+    /// bytes: 3
+    /// cycles: 4
+    /// flags affected: N and Z
+    fn lda_absolute(&mut self) {
+        let addr = self.fetch_addr();
+        self.acc = self.read_byte(addr);
+        self.lda_set_status(self.acc);
     }
 
     #[inline(always)]
@@ -343,6 +351,57 @@ mod tests {
         let opcode = cpu.fetch_byte();
         cpu.execute(opcode);
         assert_eq!(0x32, cpu.acc);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x00, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
+
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x80, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
+    }
+
+    #[test]
+    fn lda_absolute_test() {
+        const BYTES: u16 = 3;
+        const CYCLES: u64 = 4;
+        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+
+        let mut memory = Memory::new();
+        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET);
+        memory.set(0x28, MEMORY_OFFSET + 1);
+        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(0x42, 0x8028);
+        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET + 3);
+        memory.set(0x97, MEMORY_OFFSET + 4);
+        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(0x00, 0x2697);
+        memory.set(OPCODE_LDA_ABS, MEMORY_OFFSET + 6);
+        memory.set(0x70, MEMORY_OFFSET + 7);
+        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(0x80, 0x5570);
+
+        let mut cpu = CPU::new(memory);
+        cpu.reset();
+
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x42, cpu.acc);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
