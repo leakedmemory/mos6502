@@ -30,6 +30,7 @@ const OPCODE_LDA_IMM: u8 = 0xA9;
 const OPCODE_LDA_ZPG: u8 = 0xA5;
 const OPCODE_LDA_ZPX: u8 = 0xB5;
 const OPCODE_LDA_ABS: u8 = 0xAD;
+const OPCODE_LDA_ABX: u8 = 0xBD;
 
 // ============= OPCODES END ==============
 
@@ -82,6 +83,7 @@ impl CPU {
             OPCODE_LDA_ZPG => self.lda_zero_page(),
             OPCODE_LDA_ZPX => self.lda_zero_page_x(),
             OPCODE_LDA_ABS => self.lda_absolute(),
+            OPCODE_LDA_ABX => self.lda_absolute_x(),
             _ => panic!("invalid opcode: {:#X}", opcode),
         }
     }
@@ -128,6 +130,13 @@ impl CPU {
         self.cycles += 2;
     }
 
+    // often used to know the need of another add operation with the high 8 bits
+    // of the address, since the 6502's adder circuit only works with 8 bits
+    #[inline]
+    fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
+        (addr_a & 0xFF00) != (addr_b & 0xFF00)
+    }
+
     // ============= JSR =============
 
     /// bytes: 3
@@ -142,11 +151,11 @@ impl CPU {
 
     // ============= LDA =============
 
-    fn lda_set_status(&mut self, byte: u8) {
-        if byte == 0 {
+    fn lda_set_status(&mut self) {
+        if self.acc == 0 {
             self.status |= CSF_ZERO;
             self.status &= !CSF_NEGATIVE;
-        } else if Self::byte_is_negative_int(byte) {
+        } else if Self::byte_is_negative_int(self.acc) {
             self.status |= CSF_NEGATIVE;
             self.status &= !CSF_ZERO;
         }
@@ -157,7 +166,7 @@ impl CPU {
     /// flags affected: N and Z
     fn lda_immediate(&mut self) {
         self.acc = self.fetch_byte();
-        self.lda_set_status(self.acc);
+        self.lda_set_status();
     }
 
     /// bytes: 2
@@ -166,7 +175,7 @@ impl CPU {
     fn lda_zero_page(&mut self) {
         let addr = self.fetch_byte();
         self.acc = self.read_byte(addr.into());
-        self.lda_set_status(self.acc);
+        self.lda_set_status();
     }
 
     /// bytes: 2
@@ -177,7 +186,7 @@ impl CPU {
         let addr = self.x.wrapping_add(byte);
         self.cycles += 1;
         self.acc = self.read_byte(addr.into());
-        self.lda_set_status(self.acc);
+        self.lda_set_status();
     }
 
     /// bytes: 3
@@ -186,7 +195,20 @@ impl CPU {
     fn lda_absolute(&mut self) {
         let addr = self.fetch_addr();
         self.acc = self.read_byte(addr);
-        self.lda_set_status(self.acc);
+        self.lda_set_status();
+    }
+
+    /// bytes: 3
+    /// cycles: 4 (+1 if page crossed)
+    /// flags affected: N and Z
+    fn lda_absolute_x(&mut self) {
+        let abs_addr = self.fetch_addr();
+        let addr = abs_addr.wrapping_add(self.x.into());
+        if Self::page_crossed(abs_addr, addr) {
+            self.cycles += 1;
+        }
+        self.acc = self.read_byte(addr);
+        self.lda_set_status();
     }
 
     #[inline(always)]
@@ -396,6 +418,112 @@ mod tests {
 
         let mut cpu = CPU::new(memory);
         cpu.reset();
+
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x42, cpu.acc);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x00, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
+
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x80, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
+    }
+
+    #[test]
+    fn lda_absolute_x_without_page_crossing() {
+        const BYTES: u16 = 3;
+        const CYCLES: u64 = 4;
+        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const X: u8 = 0xAC;
+
+        let mut memory = Memory::new();
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET);
+        memory.set(0x28, MEMORY_OFFSET + 1);
+        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(0x42, 0x8028 + X as u16);
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 3);
+        memory.set(0x53, MEMORY_OFFSET + 4);
+        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(0x00, 0x2653 + X as u16);
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 6);
+        memory.set(0x22, MEMORY_OFFSET + 7);
+        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(0x80, 0x5522 + X as u16);
+
+        let mut cpu = CPU::new(memory);
+        cpu.reset();
+        cpu.x = X;
+
+        let init_pc = cpu.pc;
+        let init_cycles = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x42, cpu.acc);
+        assert_eq!(cpu.pc - init_pc, BYTES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+
+        let pc_after_first_exec = cpu.pc;
+        let cycles_after_first_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x00, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_ZERO);
+
+        let pc_after_second_exec = cpu.pc;
+        let cycles_after_second_exec = cpu.cycles;
+        let opcode = cpu.fetch_byte();
+        cpu.execute(opcode);
+        assert_eq!(0x80, cpu.acc);
+        assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
+        assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
+        assert_eq!(cpu.status, CPU_DEFAULT_STATUS | CSF_NEGATIVE);
+    }
+
+    #[test]
+    fn lda_absolute_x_with_page_crossing() {
+        const BYTES: u16 = 3;
+        const CYCLES: u64 = 5;
+        const MEMORY_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
+        const X: u8 = 0xAC;
+
+        let mut memory = Memory::new();
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET);
+        memory.set(0x60, MEMORY_OFFSET + 1);
+        memory.set(0x80, MEMORY_OFFSET + 2);
+        memory.set(0x42, 0x8060 + X as u16);
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 3);
+        memory.set(0x54, MEMORY_OFFSET + 4);
+        memory.set(0x26, MEMORY_OFFSET + 5);
+        memory.set(0x00, 0x2654 + X as u16);
+        memory.set(OPCODE_LDA_ABX, MEMORY_OFFSET + 6);
+        memory.set(0x83, MEMORY_OFFSET + 7);
+        memory.set(0x55, MEMORY_OFFSET + 8);
+        memory.set(0x80, 0x5583 + X as u16);
+
+        let mut cpu = CPU::new(memory);
+        cpu.reset();
+        cpu.x = X;
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
