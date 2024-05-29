@@ -80,7 +80,14 @@ impl CPU {
         self.cycles = 7;
     }
 
-    pub fn execute(&mut self, opcode: u8) {
+    pub fn run(&mut self) -> ! {
+        loop {
+            self.execute_next_instruction()
+        }
+    }
+
+    fn execute_next_instruction(&mut self) {
+        let opcode = self.fetch_byte();
         match opcode {
             // JSR
             OPCODE_JSR => self.jsr(),
@@ -111,7 +118,7 @@ impl CPU {
     }
 
     /// gets a byte from program counter and increments it in 1 cycle
-    pub fn fetch_byte(&mut self) -> u8 {
+    fn fetch_byte(&mut self) -> u8 {
         let byte = self.memory.get(self.pc);
         self.increment_pc();
         self.cycles += 1;
@@ -433,8 +440,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.pc, 0x3042);
         assert_eq!(cpu.memory.get(cpu.pc), OPCODE_LDA_IMM);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -466,8 +472,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -475,8 +480,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -484,8 +488,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -514,8 +517,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -523,8 +525,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -532,8 +533,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -564,8 +564,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -573,8 +572,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -582,8 +580,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -615,8 +612,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -624,8 +620,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -633,8 +628,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -668,8 +662,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -677,8 +670,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -686,8 +678,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -721,8 +712,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -730,8 +720,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -739,8 +728,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -774,8 +762,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -783,8 +770,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -792,8 +778,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -827,8 +812,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -836,8 +820,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -845,8 +828,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -895,8 +877,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -904,8 +885,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -913,8 +893,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -966,8 +945,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -975,8 +953,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -984,8 +961,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1037,8 +1013,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1046,8 +1021,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1055,8 +1029,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.acc, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1082,8 +1055,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1091,8 +1063,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1100,8 +1071,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1130,8 +1100,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1139,8 +1108,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1148,8 +1116,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1180,8 +1147,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1189,8 +1155,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1198,8 +1163,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1231,8 +1195,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1240,8 +1203,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1249,8 +1211,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1284,8 +1245,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1293,8 +1253,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1302,8 +1261,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1337,8 +1295,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1346,8 +1303,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1355,8 +1311,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.x, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1382,8 +1337,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1391,8 +1345,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1400,8 +1353,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1430,8 +1382,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1439,8 +1390,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1448,8 +1398,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1480,8 +1429,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x32);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1489,8 +1437,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1498,8 +1445,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1531,8 +1477,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1540,8 +1485,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1549,8 +1493,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1584,8 +1527,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1593,8 +1535,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1602,8 +1543,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
@@ -1637,8 +1577,7 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x42);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
@@ -1646,8 +1585,7 @@ mod tests {
 
         let pc_after_first_exec = cpu.pc;
         let cycles_after_first_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x00);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
@@ -1655,8 +1593,7 @@ mod tests {
 
         let pc_after_second_exec = cpu.pc;
         let cycles_after_second_exec = cpu.cycles;
-        let opcode = cpu.fetch_byte();
-        cpu.execute(opcode);
+        cpu.execute_next_instruction();
         assert_eq!(cpu.y, 0x80);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
