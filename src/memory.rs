@@ -16,11 +16,11 @@ impl Memory {
         Self { memory }
     }
 
-    pub fn get(&self, addr: u16) -> u8 {
+    pub(crate) fn get(&self, addr: u16) -> u8 {
         self.memory[addr as usize]
     }
 
-    pub fn set(&mut self, byte: u8, addr: u16) {
+    pub(crate) fn set(&mut self, byte: u8, addr: u16) {
         self.memory[addr as usize] = byte;
     }
 }
