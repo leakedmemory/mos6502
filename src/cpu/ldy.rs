@@ -61,6 +61,8 @@ pub(super) fn ldy_absolute_x(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+
     use super::super::{
         CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, OPCODE_LDY_ABS, OPCODE_LDY_ABX,
         OPCODE_LDY_IMM, OPCODE_LDY_ZPG, OPCODE_LDY_ZPX, UNRESERVED_MEMORY_ADDR_START,
@@ -81,7 +83,8 @@ mod tests {
         memory.set(OPCODE_LDY_IMM, MEM_OFFSET + 4);
         memory.set(0x80, MEM_OFFSET + 5);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -126,7 +129,8 @@ mod tests {
         memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, 0x69);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -172,7 +176,8 @@ mod tests {
         memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, X.wrapping_add(0x69).into());
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -221,7 +226,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, 0x5570);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -270,7 +276,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (X as u16).wrapping_add(0x5522));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -320,7 +327,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (X as u16).wrapping_add(0x5583));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 

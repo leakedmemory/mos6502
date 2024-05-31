@@ -100,6 +100,8 @@ pub(super) fn lda_indirect_y(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+
     use super::super::{
         CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, OPCODE_LDA_ABS, OPCODE_LDA_ABX,
         OPCODE_LDA_ABY, OPCODE_LDA_IDX, OPCODE_LDA_IDY, OPCODE_LDA_IMM, OPCODE_LDA_ZPG,
@@ -121,7 +123,8 @@ mod tests {
         memory.set(OPCODE_LDA_IMM, MEM_OFFSET + 4);
         memory.set(0x80, MEM_OFFSET + 5);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -166,7 +169,8 @@ mod tests {
         memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, 0x69);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -212,7 +216,8 @@ mod tests {
         memory.set(0x69, MEM_OFFSET + 5);
         memory.set(0x80, X.wrapping_add(0x69).into());
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -261,7 +266,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, 0x5570);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -310,7 +316,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (X as u16).wrapping_add(0x5522));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -360,7 +367,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (X as u16).wrapping_add(0x5583));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -410,7 +418,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (Y as u16).wrapping_add(0x5522));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.y = Y;
 
@@ -460,7 +469,8 @@ mod tests {
         memory.set(0x55, MEM_OFFSET + 8);
         memory.set(0x80, (Y as u16).wrapping_add(0x5583));
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.y = Y;
 
@@ -525,7 +535,8 @@ mod tests {
         memory.set(0x13, addr_l.into());
         memory.set(0x80, 0x7713);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.x = X;
 
@@ -593,7 +604,8 @@ mod tests {
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
         memory.set(0x80, addr);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.y = Y;
 
@@ -661,7 +673,8 @@ mod tests {
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
         memory.set(0x80, addr);
 
-        let mut cpu = CPU::new(memory);
+        let memory = RefCell::new(memory);
+        let mut cpu = CPU::new(&memory);
         cpu.reset();
         cpu.y = Y;
 

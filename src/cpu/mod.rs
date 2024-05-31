@@ -1,12 +1,14 @@
+use std::cell::RefCell;
+
 mod jsr;
 mod lda;
 mod ldx;
 mod ldy;
 
-use crate::cpu::jsr::*;
-use crate::cpu::lda::*;
-use crate::cpu::ldx::*;
-use crate::cpu::ldy::*;
+use self::jsr::*;
+use self::lda::*;
+use self::ldx::*;
+use self::ldy::*;
 use crate::memory::Memory;
 
 const CSF_ZERO: u8 = 0x02;
@@ -55,7 +57,7 @@ const OPCODE_LDY_ABX: u8 = 0xBC;
 
 // ==================== OPCODES END =====================
 
-pub struct CPU {
+pub struct CPU<'m> {
     acc: u8,
     x: u8,
     y: u8,
@@ -63,11 +65,11 @@ pub struct CPU {
     pc: u16,
     status: u8,
     cycles: u64,
-    memory: Memory,
+    memory: &'m RefCell<Memory>,
 }
 
-impl CPU {
-    pub fn new(memory: Memory) -> Self {
+impl<'m> CPU<'m> {
+    pub fn new(memory: &'m RefCell<Memory>) -> Self {
         Self {
             acc: 0,
             x: 0,
@@ -85,8 +87,8 @@ impl CPU {
         self.x = CPU_DEFAULT_X;
         self.y = CPU_DEFAULT_Y;
         self.sp = CPU_DEFAULT_SP;
-        self.pc = ((self.memory.get(POWER_ON_RESET_ADDR_H) as u16) << 8)
-            | (self.memory.get(POWER_ON_RESET_ADDR_L) as u16);
+        self.pc = ((self.memory.borrow().get(POWER_ON_RESET_ADDR_H) as u16) << 8)
+            | (self.memory.borrow().get(POWER_ON_RESET_ADDR_L) as u16);
         self.status = CPU_DEFAULT_STATUS;
         self.cycles = 7;
     }
@@ -128,9 +130,9 @@ impl CPU {
         }
     }
 
-    /// gets a byte from program counter and increments it in 1 cycle
+    /// reads a byte from program counter and increments it in 1 cycle
     fn fetch_byte(&mut self) -> u8 {
-        let byte = self.memory.get(self.pc);
+        let byte = self.memory.borrow().get(self.pc);
         self.increment_pc();
         self.cycles += 1;
         byte
@@ -141,14 +143,20 @@ impl CPU {
         self.pc = self.pc.wrapping_add(1);
     }
 
-    /// gets a byte from addr in 1 cycle
+    /// reads a byte from `addr` in 1 cycle
     fn read_byte(&mut self, addr: u16) -> u8 {
-        let byte = self.memory.get(addr);
+        let byte = self.memory.borrow().get(addr);
         self.cycles += 1;
         byte
     }
 
-    /// gets an addr from the program counter and increments it by 2,
+    /// writes a byte into the `addr` in 1 cycle
+    fn write_byte(&mut self, byte: u8, addr: u16) {
+        self.memory.borrow_mut().set(byte, addr);
+        self.cycles += 1;
+    }
+
+    /// reads an `addr` from the program counter and increments it by 2,
     /// in 2 cycles
     fn fetch_addr(&mut self) -> u16 {
         let addr_l = self.fetch_byte() as u16;
@@ -156,7 +164,7 @@ impl CPU {
         (addr_h << 8) | addr_l
     }
 
-    /// gets an addr using the value in `low` as the low byte
+    /// gets an `addr` using the value in `low` as the low byte
     /// and in `high` as the high byte of the addr, in 2 cycles
     fn read_addr(&mut self, low: u16, high: u16) -> u16 {
         let addr_l = self.read_byte(low);
@@ -164,18 +172,18 @@ impl CPU {
         (addr_h as u16) << 8 | addr_l as u16
     }
 
-    /// pushes an addr to the stack, wrapping around when overflowing or
+    /// pushes an `addr` to the stack, wrapping around when overflowing or
     /// underflowing, in 2 cycles
     fn push_addr_to_stack(&mut self, addr: u16) {
         let mut sp = (self.sp as u16) | SYS_STACK_ADDR_END;
         let addr_l = addr as u8;
         let addr_h = (addr >> 8) as u8;
 
-        self.memory.set(addr_h, sp);
+        self.memory.borrow_mut().set(addr_h, sp);
         self.sp = self.sp.wrapping_sub(1);
         sp = (self.sp as u16) | SYS_STACK_ADDR_END;
 
-        self.memory.set(addr_l, sp);
+        self.memory.borrow_mut().set(addr_l, sp);
         self.sp = self.sp.wrapping_sub(1);
         self.cycles += 2;
     }
