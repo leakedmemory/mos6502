@@ -513,8 +513,8 @@ mod tests {
         memory.set(zpg_addr, MEM_OFFSET + 1);
         let addr_l = X.wrapping_add(zpg_addr);
         let addr_h = X.wrapping_add(zpg_addr + 1);
-        memory.set(0x32, addr_h.into());
         memory.set(0x22, addr_l.into());
+        memory.set(0x32, addr_h.into());
         memory.set(0x42, 0x3222);
 
         memory.set(OPCODE_LDA_IDX, MEM_OFFSET + 2);
@@ -522,8 +522,8 @@ mod tests {
         memory.set(zpg_addr, MEM_OFFSET + 3);
         let addr_l = X.wrapping_add(zpg_addr);
         let addr_h = X.wrapping_add(zpg_addr + 1);
-        memory.set(0x83, addr_h.into());
         memory.set(0x46, addr_l.into());
+        memory.set(0x83, addr_h.into());
         memory.set(0x00, 0x8346);
 
         memory.set(OPCODE_LDA_IDX, MEM_OFFSET + 4);
@@ -531,8 +531,8 @@ mod tests {
         memory.set(zpg_addr, MEM_OFFSET + 5);
         let addr_l = X.wrapping_add(zpg_addr);
         let addr_h = X.wrapping_add(zpg_addr + 1);
-        memory.set(0x77, addr_h.into());
         memory.set(0x13, addr_l.into());
+        memory.set(0x77, addr_h.into());
         memory.set(0x80, 0x7713);
 
         let memory = RefCell::new(memory);
@@ -577,8 +577,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET);
         let zpg_addr = 0x08;
         memory.set(zpg_addr, MEM_OFFSET + 1);
-        let addr_h = 0x32;
         let addr_l = 0x22;
+        let addr_h = 0x32;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
@@ -587,8 +587,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET + 2);
         let zpg_addr = 0x57;
         memory.set(zpg_addr, MEM_OFFSET + 3);
-        let addr_h = 0x83;
         let addr_l = 0x46;
+        let addr_h = 0x83;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
@@ -597,8 +597,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET + 4);
         let zpg_addr = 0x69;
         memory.set(zpg_addr, MEM_OFFSET + 5);
-        let addr_h = 0x77;
         let addr_l = 0x13;
+        let addr_h = 0x77;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
@@ -646,8 +646,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET);
         let zpg_addr = 0x08;
         memory.set(zpg_addr, MEM_OFFSET + 1);
-        let addr_h = 0x32;
         let addr_l = 0xDF;
+        let addr_h = 0x32;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
@@ -656,8 +656,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET + 2);
         let zpg_addr = 0x57;
         memory.set(zpg_addr, MEM_OFFSET + 3);
-        let addr_h = 0x83;
         let addr_l = 0xCC;
+        let addr_h = 0x83;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());
@@ -666,8 +666,8 @@ mod tests {
         memory.set(OPCODE_LDA_IDY, MEM_OFFSET + 4);
         let zpg_addr = 0x69;
         memory.set(zpg_addr, MEM_OFFSET + 5);
-        let addr_h = 0x77;
         let addr_l = 0x86;
+        let addr_h = 0x77;
         memory.set(addr_l, zpg_addr.into());
         memory.set(addr_h, zpg_addr.wrapping_add(1).into());
         let addr = ((addr_h as u16) << 8 | addr_l as u16).wrapping_add(Y.into());

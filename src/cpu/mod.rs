@@ -4,11 +4,13 @@ mod jsr;
 mod lda;
 mod ldx;
 mod ldy;
+mod sta;
 
 use self::jsr::*;
 use self::lda::*;
 use self::ldx::*;
 use self::ldy::*;
+use self::sta::*;
 use crate::memory::Memory;
 
 const CSF_ZERO: u8 = 0x02;
@@ -54,6 +56,15 @@ const OPCODE_LDY_ZPG: u8 = 0xA4;
 const OPCODE_LDY_ZPX: u8 = 0xB4;
 const OPCODE_LDY_ABS: u8 = 0xAC;
 const OPCODE_LDY_ABX: u8 = 0xBC;
+
+// STA
+const OPCODE_STA_ZPG: u8 = 0x85;
+const OPCODE_STA_ZPX: u8 = 0x95;
+const OPCODE_STA_ABS: u8 = 0x8D;
+const OPCODE_STA_ABX: u8 = 0x9D;
+const OPCODE_STA_ABY: u8 = 0x99;
+const OPCODE_STA_IDX: u8 = 0x81;
+const OPCODE_STA_IDY: u8 = 0x91;
 
 // ==================== OPCODES END =====================
 
@@ -125,6 +136,14 @@ impl<'m> CPU<'m> {
             OPCODE_LDY_ZPX => ldy_zero_page_x(self),
             OPCODE_LDY_ABS => ldy_absolute(self),
             OPCODE_LDY_ABX => ldy_absolute_x(self),
+            // STA
+            OPCODE_STA_ZPG => sta_zero_page(self),
+            OPCODE_STA_ZPX => sta_zero_page_x(self),
+            OPCODE_STA_ABS => sta_absolute(self),
+            OPCODE_STA_ABX => sta_absolute_x(self),
+            OPCODE_STA_ABY => sta_absolute_y(self),
+            OPCODE_STA_IDX => sta_indirect_x(self),
+            OPCODE_STA_IDY => sta_indirect_y(self),
             // UNREACHABLE
             _ => unreachable!("invalid opcode: {:#X}", opcode),
         }
@@ -156,7 +175,7 @@ impl<'m> CPU<'m> {
         self.cycles += 1;
     }
 
-    /// reads an `addr` from the program counter and increments it by 2,
+    /// reads an addr from the program counter and increments it by 2,
     /// in 2 cycles
     fn fetch_addr(&mut self) -> u16 {
         let addr_l = self.fetch_byte() as u16;
@@ -164,7 +183,7 @@ impl<'m> CPU<'m> {
         (addr_h << 8) | addr_l
     }
 
-    /// gets an `addr` using the value in `low` as the low byte
+    /// reads an addr using the value in `low` as the low byte
     /// and in `high` as the high byte of the addr, in 2 cycles
     fn read_addr(&mut self, low: u16, high: u16) -> u16 {
         let addr_l = self.read_byte(low);
