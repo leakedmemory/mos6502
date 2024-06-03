@@ -1,11 +1,14 @@
 use std::cell::RefCell;
 
+use crate::memory::Memory;
+
 mod jsr;
 mod lda;
 mod ldx;
 mod ldy;
 mod sta;
 mod stx;
+mod sty;
 
 use self::jsr::*;
 use self::lda::*;
@@ -13,7 +16,7 @@ use self::ldx::*;
 use self::ldy::*;
 use self::sta::*;
 use self::stx::*;
-use crate::memory::Memory;
+use self::sty::*;
 
 const CSF_ZERO: u8 = 0x02;
 const CSF_NEGATIVE: u8 = 0x80;
@@ -72,6 +75,11 @@ const OPCODE_STA_IDY: u8 = 0x91;
 const OPCODE_STX_ZPG: u8 = 0x86;
 const OPCODE_STX_ZPY: u8 = 0x96;
 const OPCODE_STX_ABS: u8 = 0x8E;
+
+// STY
+const OPCODE_STY_ZPG: u8 = 0x84;
+const OPCODE_STY_ZPX: u8 = 0x94;
+const OPCODE_STY_ABS: u8 = 0x8C;
 
 // ==================== OPCODES END =====================
 
@@ -155,6 +163,10 @@ impl<'m> CPU<'m> {
             OPCODE_STX_ZPG => stx_zero_page(self),
             OPCODE_STX_ZPY => stx_zero_page_y(self),
             OPCODE_STX_ABS => stx_absolute(self),
+            // STY
+            OPCODE_STY_ZPG => sty_zero_page(self),
+            OPCODE_STY_ZPX => sty_zero_page_x(self),
+            OPCODE_STY_ABS => sty_absolute(self),
             // UNREACHABLE
             _ => unreachable!("invalid opcode: {:#X}", opcode),
         }
