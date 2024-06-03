@@ -5,12 +5,14 @@ mod lda;
 mod ldx;
 mod ldy;
 mod sta;
+mod stx;
 
 use self::jsr::*;
 use self::lda::*;
 use self::ldx::*;
 use self::ldy::*;
 use self::sta::*;
+use self::stx::*;
 use crate::memory::Memory;
 
 const CSF_ZERO: u8 = 0x02;
@@ -65,6 +67,11 @@ const OPCODE_STA_ABX: u8 = 0x9D;
 const OPCODE_STA_ABY: u8 = 0x99;
 const OPCODE_STA_IDX: u8 = 0x81;
 const OPCODE_STA_IDY: u8 = 0x91;
+
+// STX
+const OPCODE_STX_ZPG: u8 = 0x86;
+const OPCODE_STX_ZPY: u8 = 0x96;
+const OPCODE_STX_ABS: u8 = 0x8E;
 
 // ==================== OPCODES END =====================
 
@@ -144,6 +151,10 @@ impl<'m> CPU<'m> {
             OPCODE_STA_ABY => sta_absolute_y(self),
             OPCODE_STA_IDX => sta_indirect_x(self),
             OPCODE_STA_IDY => sta_indirect_y(self),
+            // STX
+            OPCODE_STX_ZPG => stx_zero_page(self),
+            OPCODE_STX_ZPY => stx_zero_page_y(self),
+            OPCODE_STX_ABS => stx_absolute(self),
             // UNREACHABLE
             _ => unreachable!("invalid opcode: {:#X}", opcode),
         }
