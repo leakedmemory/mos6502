@@ -1,4 +1,4 @@
-use super::{CPU, CSF_NEGATIVE, CSF_ZERO};
+use crate::cpu::{CPU, CSF_NEGATIVE, CSF_ZERO};
 
 fn lda_set_status(cpu: &mut CPU) {
     cpu.status &= !(CSF_ZERO | CSF_NEGATIVE);
@@ -11,16 +11,16 @@ fn lda_set_status(cpu: &mut CPU) {
 
 /// bytes: 2
 /// cycles: 2
-/// flags affected: N and Z
-pub(super) fn lda_immediate(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_immediate(cpu: &mut CPU) {
     cpu.acc = cpu.fetch_byte();
     lda_set_status(cpu);
 }
 
 /// bytes: 2
 /// cycles: 3
-/// flags affected: N and Z
-pub(super) fn lda_zero_page(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_zero_page(cpu: &mut CPU) {
     let addr = cpu.fetch_byte();
     cpu.acc = cpu.read_byte(addr.into());
     lda_set_status(cpu);
@@ -28,8 +28,8 @@ pub(super) fn lda_zero_page(cpu: &mut CPU) {
 
 /// bytes: 2
 /// cycles: 4
-/// flags affected: N and Z
-pub(super) fn lda_zero_page_x(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_zero_page_x(cpu: &mut CPU) {
     let byte = cpu.fetch_byte();
     let addr = cpu.x.wrapping_add(byte);
     cpu.cycles += 1;
@@ -39,8 +39,8 @@ pub(super) fn lda_zero_page_x(cpu: &mut CPU) {
 
 /// bytes: 3
 /// cycles: 4
-/// flags affected: N and Z
-pub(super) fn lda_absolute(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_absolute(cpu: &mut CPU) {
     let addr = cpu.fetch_addr();
     cpu.acc = cpu.read_byte(addr);
     lda_set_status(cpu);
@@ -48,8 +48,8 @@ pub(super) fn lda_absolute(cpu: &mut CPU) {
 
 /// bytes: 3
 /// cycles: 4 (+1 if page crossed)
-/// flags affected: N and Z
-pub(super) fn lda_absolute_x(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_absolute_x(cpu: &mut CPU) {
     let abs_addr = cpu.fetch_addr();
     let eff_addr = abs_addr.wrapping_add(cpu.x.into());
     if CPU::page_crossed(abs_addr, eff_addr) {
@@ -61,8 +61,8 @@ pub(super) fn lda_absolute_x(cpu: &mut CPU) {
 
 /// bytes: 3
 /// cycles: 4 (+1 if page crossed)
-/// flags affected: N and Z
-pub(super) fn lda_absolute_y(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_absolute_y(cpu: &mut CPU) {
     let abs_addr = cpu.fetch_addr();
     let eff_addr = abs_addr.wrapping_add(cpu.y.into());
     if CPU::page_crossed(abs_addr, eff_addr) {
@@ -74,8 +74,8 @@ pub(super) fn lda_absolute_y(cpu: &mut CPU) {
 
 /// bytes: 2
 /// cycles: 6
-/// flags affected: N and Z
-pub(super) fn lda_indirect_x(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_indirect_x(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let addr = zpg_addr.wrapping_add(cpu.x);
     cpu.cycles += 1;
@@ -86,8 +86,8 @@ pub(super) fn lda_indirect_x(cpu: &mut CPU) {
 
 /// bytes: 2
 /// cycles: 5 (+1 if page crossed)
-/// flags affected: N and Z
-pub(super) fn lda_indirect_y(cpu: &mut CPU) {
+/// flags affected: N,Z
+pub(in crate::cpu) fn lda_indirect_y(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let addr = cpu.read_addr(zpg_addr.into(), zpg_addr.wrapping_add(1).into());
     let eff_addr = addr.wrapping_add(cpu.y.into());
@@ -102,7 +102,7 @@ pub(super) fn lda_indirect_y(cpu: &mut CPU) {
 mod tests {
     use std::cell::RefCell;
 
-    use super::super::{
+    use crate::cpu::{
         CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, OPCODE_LDA_ABS, OPCODE_LDA_ABX,
         OPCODE_LDA_ABY, OPCODE_LDA_IDX, OPCODE_LDA_IDY, OPCODE_LDA_IMM, OPCODE_LDA_ZPG,
         OPCODE_LDA_ZPX, UNRESERVED_MEMORY_ADDR_START,

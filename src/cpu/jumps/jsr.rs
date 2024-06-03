@@ -1,9 +1,9 @@
-use super::CPU;
+use crate::cpu::CPU;
 
 /// bytes: 3
 /// cycles: 6
 /// flags affected: none
-pub(super) fn jsr(cpu: &mut CPU) {
+pub(in crate::cpu) fn jsr(cpu: &mut CPU) {
     let addr = cpu.fetch_addr();
     cpu.push_addr_to_stack(cpu.pc - 1);
     cpu.pc = addr; // takes 1 cycle
@@ -14,7 +14,7 @@ pub(super) fn jsr(cpu: &mut CPU) {
 mod tests {
     use std::cell::RefCell;
 
-    use super::super::{
+    use crate::cpu::{
         CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, OPCODE_JSR, OPCODE_LDA_IMM, SYS_STACK_ADDR_END,
         UNRESERVED_MEMORY_ADDR_START,
     };

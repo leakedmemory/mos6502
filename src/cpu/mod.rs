@@ -2,21 +2,13 @@ use std::cell::RefCell;
 
 use crate::memory::Memory;
 
-mod jsr;
-mod lda;
-mod ldx;
-mod ldy;
-mod sta;
-mod stx;
-mod sty;
+mod jumps;
+mod load_ops;
+mod store_ops;
 
-use self::jsr::*;
-use self::lda::*;
-use self::ldx::*;
-use self::ldy::*;
-use self::sta::*;
-use self::stx::*;
-use self::sty::*;
+use self::jumps::*;
+use self::load_ops::*;
+use self::store_ops::*;
 
 const CSF_ZERO: u8 = 0x02;
 const CSF_NEGATIVE: u8 = 0x80;

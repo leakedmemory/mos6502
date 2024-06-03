@@ -1,9 +1,9 @@
-use super::CPU;
+use crate::cpu::CPU;
 
 /// bytes: 2
 /// cycles: 3
 /// flags affected: none
-pub(super) fn stx_zero_page(cpu: &mut CPU) {
+pub(in crate::cpu) fn stx_zero_page(cpu: &mut CPU) {
     let addr = cpu.fetch_byte();
     cpu.write_byte(cpu.x, addr.into());
 }
@@ -11,7 +11,7 @@ pub(super) fn stx_zero_page(cpu: &mut CPU) {
 /// bytes: 2
 /// cycles: 4
 /// flags affected: none
-pub(super) fn stx_zero_page_y(cpu: &mut CPU) {
+pub(in crate::cpu) fn stx_zero_page_y(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let eff_addr = zpg_addr.wrapping_add(cpu.y);
     cpu.cycles += 1;
@@ -21,7 +21,7 @@ pub(super) fn stx_zero_page_y(cpu: &mut CPU) {
 /// bytes: 3
 /// cycles: 4
 /// flags affected: none
-pub(super) fn stx_absolute(cpu: &mut CPU) {
+pub(in crate::cpu) fn stx_absolute(cpu: &mut CPU) {
     let addr = cpu.fetch_addr();
     cpu.write_byte(cpu.x, addr);
 }
@@ -30,7 +30,7 @@ pub(super) fn stx_absolute(cpu: &mut CPU) {
 mod tests {
     use std::cell::RefCell;
 
-    use super::super::{
+    use crate::cpu::{
         CPU, CPU_DEFAULT_STATUS, OPCODE_STX_ABS, OPCODE_STX_ZPG, OPCODE_STX_ZPY,
         UNRESERVED_MEMORY_ADDR_START,
     };
