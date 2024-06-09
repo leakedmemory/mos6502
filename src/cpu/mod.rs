@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::memory::Memory;
 
@@ -75,7 +76,7 @@ const OPCODE_STY_ABS: u8 = 0x8C;
 
 // ==================== OPCODES END =====================
 
-pub struct CPU<'m> {
+pub struct CPU {
     acc: u8,
     x: u8,
     y: u8,
@@ -83,11 +84,11 @@ pub struct CPU<'m> {
     pc: u16,
     status: u8,
     cycles: u64,
-    memory: &'m RefCell<Memory>,
+    memory: Rc<RefCell<Memory>>,
 }
 
-impl<'m> CPU<'m> {
-    pub fn new(memory: &'m RefCell<Memory>) -> Self {
+impl CPU {
+    pub fn new(memory: Rc<RefCell<Memory>>) -> Self {
         Self {
             acc: 0,
             x: 0,
@@ -105,8 +106,8 @@ impl<'m> CPU<'m> {
         self.x = CPU_DEFAULT_X;
         self.y = CPU_DEFAULT_Y;
         self.sp = CPU_DEFAULT_SP;
-        self.pc = ((self.memory.borrow().get(POWER_ON_RESET_ADDR_H) as u16) << 8)
-            | (self.memory.borrow().get(POWER_ON_RESET_ADDR_L) as u16);
+        self.pc = ((self.memory.borrow().read(POWER_ON_RESET_ADDR_H) as u16) << 8)
+            | (self.memory.borrow().read(POWER_ON_RESET_ADDR_L) as u16);
         self.status = CPU_DEFAULT_STATUS;
         self.cycles = 7;
     }
@@ -166,7 +167,7 @@ impl<'m> CPU<'m> {
 
     /// reads a byte from program counter and increments it in 1 cycle
     fn fetch_byte(&mut self) -> u8 {
-        let byte = self.memory.borrow().get(self.pc);
+        let byte = self.memory.borrow().read(self.pc);
         self.increment_pc();
         self.cycles += 1;
         byte
@@ -179,14 +180,14 @@ impl<'m> CPU<'m> {
 
     /// reads a byte from `addr` in 1 cycle
     fn read_byte(&mut self, addr: u16) -> u8 {
-        let byte = self.memory.borrow().get(addr);
+        let byte = self.memory.borrow().read(addr);
         self.cycles += 1;
         byte
     }
 
     /// writes a byte into the `addr` in 1 cycle
     fn write_byte(&mut self, byte: u8, addr: u16) {
-        self.memory.borrow_mut().set(byte, addr);
+        self.memory.borrow_mut().write(byte, addr);
         self.cycles += 1;
     }
 
@@ -213,11 +214,11 @@ impl<'m> CPU<'m> {
         let addr_l = addr as u8;
         let addr_h = (addr >> 8) as u8;
 
-        self.memory.borrow_mut().set(addr_h, sp);
+        self.memory.borrow_mut().write(addr_h, sp);
         self.sp = self.sp.wrapping_sub(1);
         sp = (self.sp as u16) | SYS_STACK_ADDR_END;
 
-        self.memory.borrow_mut().set(addr_l, sp);
+        self.memory.borrow_mut().write(addr_l, sp);
         self.sp = self.sp.wrapping_sub(1);
         self.cycles += 2;
     }

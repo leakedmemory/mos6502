@@ -28,7 +28,7 @@ pub(in crate::cpu) fn sty_absolute(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
+    use std::rc::Rc;
 
     use crate::cpu::{
         CPU, CPU_DEFAULT_STATUS, OPCODE_STY_ABS, OPCODE_STY_ZPG, OPCODE_STY_ZPX,
@@ -42,23 +42,22 @@ mod tests {
         const CYCLES: u64 = 3;
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
-        let mut memory = Memory::new();
-        memory.set(OPCODE_STY_ZPG, MEM_OFFSET);
-        memory.set(0x42, MEM_OFFSET + 1);
-        memory.set(OPCODE_STY_ZPG, MEM_OFFSET + 2);
-        memory.set(0x57, MEM_OFFSET + 3);
-        memory.set(OPCODE_STY_ZPG, MEM_OFFSET + 4);
-        memory.set(0x69, MEM_OFFSET + 5);
+        let memory = Memory::new();
+        memory.borrow_mut().write(OPCODE_STY_ZPG, MEM_OFFSET);
+        memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
+        memory.borrow_mut().write(OPCODE_STY_ZPG, MEM_OFFSET + 2);
+        memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
+        memory.borrow_mut().write(OPCODE_STY_ZPG, MEM_OFFSET + 4);
+        memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
-        let memory = RefCell::new(memory);
-        let mut cpu = CPU::new(&memory);
+        let mut cpu = CPU::new(Rc::clone(&memory));
         cpu.reset();
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
         cpu.y = 0x32;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x42), cpu.y);
+        assert_eq!(memory.borrow().read(0x42), cpu.y);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -67,7 +66,7 @@ mod tests {
         let cycles_after_first_exec = cpu.cycles;
         cpu.y = 0x00;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x57), cpu.y);
+        assert_eq!(memory.borrow().read(0x57), cpu.y);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -76,7 +75,7 @@ mod tests {
         let cycles_after_second_exec = cpu.cycles;
         cpu.y = 0x80;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x69), cpu.y);
+        assert_eq!(memory.borrow().read(0x69), cpu.y);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -89,16 +88,15 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
         const X: u8 = 0xAC;
 
-        let mut memory = Memory::new();
-        memory.set(OPCODE_STY_ZPX, MEM_OFFSET);
-        memory.set(0x42, MEM_OFFSET + 1);
-        memory.set(OPCODE_STY_ZPX, MEM_OFFSET + 2);
-        memory.set(0x57, MEM_OFFSET + 3);
-        memory.set(OPCODE_STY_ZPX, MEM_OFFSET + 4);
-        memory.set(0x69, MEM_OFFSET + 5);
+        let memory = Memory::new();
+        memory.borrow_mut().write(OPCODE_STY_ZPX, MEM_OFFSET);
+        memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
+        memory.borrow_mut().write(OPCODE_STY_ZPX, MEM_OFFSET + 2);
+        memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
+        memory.borrow_mut().write(OPCODE_STY_ZPX, MEM_OFFSET + 4);
+        memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
-        let memory = RefCell::new(memory);
-        let mut cpu = CPU::new(&memory);
+        let mut cpu = CPU::new(Rc::clone(&memory));
         cpu.reset();
         cpu.x = X;
 
@@ -106,7 +104,7 @@ mod tests {
         let init_cycles = cpu.cycles;
         cpu.y = 0x32;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(X.wrapping_add(0x42).into()), cpu.y);
+        assert_eq!(memory.borrow().read(X.wrapping_add(0x42).into()), cpu.y);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -115,7 +113,7 @@ mod tests {
         let cycles_after_first_exec = cpu.cycles;
         cpu.y = 0x00;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(X.wrapping_add(0x57).into()), cpu.y);
+        assert_eq!(memory.borrow().read(X.wrapping_add(0x57).into()), cpu.y);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -124,7 +122,7 @@ mod tests {
         let cycles_after_second_exec = cpu.cycles;
         cpu.y = 0x80;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(X.wrapping_add(0x69).into()), cpu.y);
+        assert_eq!(memory.borrow().read(X.wrapping_add(0x69).into()), cpu.y);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -136,26 +134,25 @@ mod tests {
         const CYCLES: u64 = 4;
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
-        let mut memory = Memory::new();
-        memory.set(OPCODE_STY_ABS, MEM_OFFSET);
-        memory.set(0x28, MEM_OFFSET + 1);
-        memory.set(0x80, MEM_OFFSET + 2);
-        memory.set(OPCODE_STY_ABS, MEM_OFFSET + 3);
-        memory.set(0x97, MEM_OFFSET + 4);
-        memory.set(0x26, MEM_OFFSET + 5);
-        memory.set(OPCODE_STY_ABS, MEM_OFFSET + 6);
-        memory.set(0x70, MEM_OFFSET + 7);
-        memory.set(0x55, MEM_OFFSET + 8);
+        let memory = Memory::new();
+        memory.borrow_mut().write(OPCODE_STY_ABS, MEM_OFFSET);
+        memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
+        memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
+        memory.borrow_mut().write(OPCODE_STY_ABS, MEM_OFFSET + 3);
+        memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
+        memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
+        memory.borrow_mut().write(OPCODE_STY_ABS, MEM_OFFSET + 6);
+        memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
+        memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
 
-        let memory = RefCell::new(memory);
-        let mut cpu = CPU::new(&memory);
+        let mut cpu = CPU::new(Rc::clone(&memory));
         cpu.reset();
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
         cpu.y = 0x32;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x8028), cpu.y);
+        assert_eq!(memory.borrow().read(0x8028), cpu.y);
         assert_eq!(cpu.pc - init_pc, BYTES);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -164,7 +161,7 @@ mod tests {
         let cycles_after_first_exec = cpu.cycles;
         cpu.y = 0x00;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x2697), cpu.y);
+        assert_eq!(memory.borrow().read(0x2697), cpu.y);
         assert_eq!(cpu.pc - pc_after_first_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
@@ -173,7 +170,7 @@ mod tests {
         let cycles_after_second_exec = cpu.cycles;
         cpu.y = 0x80;
         cpu.execute_next_instruction();
-        assert_eq!(memory.borrow().get(0x5570), cpu.y);
+        assert_eq!(memory.borrow().read(0x5570), cpu.y);
         assert_eq!(cpu.pc - pc_after_second_exec, BYTES);
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);

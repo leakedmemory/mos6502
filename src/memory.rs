@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::cpu::{POWER_ON_RESET_ADDR_H, POWER_ON_RESET_ADDR_L};
 
 // 16-bit address bus == 2^16 == 64KB
@@ -8,19 +11,19 @@ pub struct Memory {
 }
 
 impl Memory {
-    pub fn new() -> Self {
+    pub fn new() -> Rc<RefCell<Self>> {
         let mut memory = [0; MEMORY_SIZE];
         memory[POWER_ON_RESET_ADDR_L as usize] = 0x00;
         memory[POWER_ON_RESET_ADDR_H as usize] = 0x02;
 
-        Self { memory }
+        Rc::new(RefCell::new(Self { memory }))
     }
 
-    pub(crate) fn get(&self, addr: u16) -> u8 {
+    pub fn read(&self, addr: u16) -> u8 {
         self.memory[addr as usize]
     }
 
-    pub(crate) fn set(&mut self, byte: u8, addr: u16) {
+    pub fn write(&mut self, byte: u8, addr: u16) {
         self.memory[addr as usize] = byte;
     }
 }
