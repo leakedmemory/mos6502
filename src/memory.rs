@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::cpu::{POWER_ON_RESET_ADDR_H, POWER_ON_RESET_ADDR_L};
+use crate::cpu::{POWER_ON_RESET_ADDR_H, POWER_ON_RESET_ADDR_L, UNRESERVED_MEMORY_ADDR_START};
 
 // 16-bit address bus == 2^16 == 64KB
 const MEMORY_SIZE: usize = 64 * 1024;
@@ -13,8 +13,8 @@ pub struct Memory {
 impl Memory {
     pub fn new() -> Rc<RefCell<Self>> {
         let mut memory = [0; MEMORY_SIZE];
-        memory[POWER_ON_RESET_ADDR_L as usize] = 0x00;
-        memory[POWER_ON_RESET_ADDR_H as usize] = 0x02;
+        memory[POWER_ON_RESET_ADDR_L as usize] = UNRESERVED_MEMORY_ADDR_START as u8;
+        memory[POWER_ON_RESET_ADDR_H as usize] = (UNRESERVED_MEMORY_ADDR_START >> 8) as u8;
 
         Rc::new(RefCell::new(Self { memory }))
     }

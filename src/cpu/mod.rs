@@ -15,8 +15,7 @@ const CSF_ZERO: u8 = 0x02;
 const CSF_NEGATIVE: u8 = 0x80;
 
 const SYS_STACK_ADDR_END: u16 = 0x100;
-#[allow(dead_code)]
-const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200; // only used in tests for now
+pub(crate) const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200;
 pub(crate) const POWER_ON_RESET_ADDR_L: u16 = 0xFFFC;
 pub(crate) const POWER_ON_RESET_ADDR_H: u16 = 0xFFFD;
 
@@ -27,6 +26,10 @@ const CPU_DEFAULT_SP: u8 = 0xFF;
 const CPU_DEFAULT_STATUS: u8 = 0x20;
 
 // ==================== OPCODES START ====================
+
+// JMP
+const OPCODE_JMP_ABS: u8 = 0x4C;
+const OPCODE_JMP_IND: u8 = 0x6C;
 
 // JSR
 const OPCODE_JSR: u8 = 0x20;
@@ -121,6 +124,9 @@ impl CPU {
     fn execute_next_instruction(&mut self) {
         let opcode = self.fetch_byte();
         match opcode {
+            // JMP
+            OPCODE_JMP_ABS => jmp_abs(self),
+            OPCODE_JMP_IND => jmp_ind(self),
             // JSR
             OPCODE_JSR => jsr(self),
             // LDA
@@ -165,30 +171,17 @@ impl CPU {
         }
     }
 
+    #[inline]
+    fn increment_pc(&mut self) {
+        self.pc = self.pc.wrapping_add(1);
+    }
+
     /// reads a byte from program counter and increments it in 1 cycle
     fn fetch_byte(&mut self) -> u8 {
         let byte = self.memory.borrow().read(self.pc);
         self.increment_pc();
         self.cycles += 1;
         byte
-    }
-
-    #[inline]
-    fn increment_pc(&mut self) {
-        self.pc = self.pc.wrapping_add(1);
-    }
-
-    /// reads a byte from `addr` in 1 cycle
-    fn read_byte(&mut self, addr: u16) -> u8 {
-        let byte = self.memory.borrow().read(addr);
-        self.cycles += 1;
-        byte
-    }
-
-    /// writes a byte into the `addr` in 1 cycle
-    fn write_byte(&mut self, byte: u8, addr: u16) {
-        self.memory.borrow_mut().write(byte, addr);
-        self.cycles += 1;
     }
 
     /// reads an addr from the program counter and increments it by 2,
@@ -199,12 +192,25 @@ impl CPU {
         (addr_h << 8) | addr_l
     }
 
+    /// reads a byte from `addr` in 1 cycle
+    fn read_byte(&mut self, addr: u16) -> u8 {
+        let byte = self.memory.borrow().read(addr);
+        self.cycles += 1;
+        byte
+    }
+
     /// reads an addr using the value in `low` as the low byte
     /// and in `high` as the high byte of the addr, in 2 cycles
     fn read_addr(&mut self, low: u16, high: u16) -> u16 {
         let addr_l = self.read_byte(low);
         let addr_h = self.read_byte(high);
         (addr_h as u16) << 8 | addr_l as u16
+    }
+
+    /// writes a byte into the `addr` in 1 cycle
+    fn write_byte(&mut self, byte: u8, addr: u16) {
+        self.memory.borrow_mut().write(byte, addr);
+        self.cycles += 1;
     }
 
     /// pushes an `addr` to the stack, wrapping around when overflowing or
