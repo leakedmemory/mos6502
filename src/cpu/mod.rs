@@ -1,3 +1,7 @@
+mod jumps;
+mod load_ops;
+mod store_ops;
+
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -6,13 +10,9 @@ use num_enum::TryFromPrimitive;
 
 use crate::memory::Memory;
 
-mod jumps;
-mod load_ops;
-mod store_ops;
-
-use self::jumps::*;
-use self::load_ops::*;
-use self::store_ops::*;
+use jumps::*;
+use load_ops::*;
+use store_ops::*;
 
 const CSF_ZERO: u8 = 0x02;
 const CSF_NEGATIVE: u8 = 0x80;
@@ -31,12 +31,11 @@ const CPU_DEFAULT_STATUS: u8 = 0x20;
 #[derive(Debug, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Opcode {
-    // JMP
+    // jumps
     JMPAbs = 0x4C,
     JMPInd = 0x6C,
-
-    // JSR
     JSR = 0x20,
+    RTS = 0x60,
 
     // LDA
     LDAImm = 0xA9,
@@ -126,7 +125,8 @@ impl CPU {
 
     fn execute_next_instruction(&mut self) {
         let opcode_byte = self.fetch_byte();
-        let opcode = Opcode::try_from(opcode_byte).expect("Invalid opcode");
+        let opcode =
+            Opcode::try_from(opcode_byte).expect(&format!("Invalid opcode: {:#04X}", opcode_byte));
 
         match opcode {
             // JMP
@@ -159,6 +159,9 @@ impl CPU {
             Opcode::LDYZpx => ldy_zero_page_x(self),
             Opcode::LDYAbs => ldy_absolute(self),
             Opcode::LDYAbx => ldy_absolute_x(self),
+
+            // RTS
+            Opcode::RTS => rts(self),
 
             // STA
             Opcode::STAZpg => sta_zero_page(self),
@@ -223,20 +226,40 @@ impl CPU {
         self.cycles += 1;
     }
 
+    /// pushes a `byte` to the stack, wrapping around when ovewflowing or
+    /// underflowing, in 1 cycle
+    fn push_byte_to_stack(&mut self, byte: u8) {
+        let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
+        self.memory.borrow_mut().write(byte, stack_addr);
+        self.sp = self.sp.wrapping_sub(1);
+        self.cycles += 1;
+    }
+
     /// pushes an `addr` to the stack, wrapping around when overflowing or
     /// underflowing, in 2 cycles
     fn push_addr_to_stack(&mut self, addr: u16) {
-        let mut sp = (self.sp as u16) | SYS_STACK_ADDR_END;
-        let addr_l = addr as u8;
         let addr_h = (addr >> 8) as u8;
+        let addr_l = addr as u8;
+        self.push_byte_to_stack(addr_h);
+        self.push_byte_to_stack(addr_l);
+    }
 
-        self.memory.borrow_mut().write(addr_h, sp);
-        self.sp = self.sp.wrapping_sub(1);
-        sp = (self.sp as u16) | SYS_STACK_ADDR_END;
-
-        self.memory.borrow_mut().write(addr_l, sp);
-        self.sp = self.sp.wrapping_sub(1);
+    /// pops a byte from the stack, wrapping around when overflowing or
+    /// underflowing, in 2 cycles
+    fn pop_byte_from_stack(&mut self) -> u8 {
+        self.sp = self.sp.wrapping_add(1); // takes 1 cycle
+        let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
+        let byte = self.memory.borrow().read(stack_addr);
         self.cycles += 2;
+        byte
+    }
+
+    /// pops an addr from the stack, wrapping around when overflowing or
+    /// underflowing, in 4 cycles
+    fn pop_addr_from_stack(&mut self) -> u16 {
+        let addr_l = self.pop_byte_from_stack();
+        let addr_h = self.pop_byte_from_stack();
+        (addr_h as u16) << 8 | addr_l as u16
     }
 
     #[inline(always)]

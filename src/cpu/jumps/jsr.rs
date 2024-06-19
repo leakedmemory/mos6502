@@ -47,12 +47,12 @@ mod tests {
         let stack_pc_l = cpu
             .memory
             .borrow()
-            .read(((cpu.sp + 1) as u16) | SYS_STACK_ADDR_END) as u16;
+            .read((cpu.sp + 1) as u16 | SYS_STACK_ADDR_END);
         let stack_pc_h = cpu
             .memory
             .borrow()
-            .read(((cpu.sp + 2) as u16) | SYS_STACK_ADDR_END) as u16;
-        let stack_pc = (stack_pc_h << 8) | stack_pc_l;
+            .read((cpu.sp + 2) as u16 | SYS_STACK_ADDR_END);
+        let stack_pc = (stack_pc_h as u16) << 8 | stack_pc_l as u16;
         assert_eq!(stack_pc + 1 - init_pc, BYTES);
     }
 }
