@@ -1,5 +1,8 @@
 use std::cell::RefCell;
+use std::convert::TryFrom;
 use std::rc::Rc;
+
+use num_enum::TryFromPrimitive;
 
 use crate::memory::Memory;
 
@@ -25,59 +28,59 @@ const CPU_DEFAULT_Y: u8 = 0;
 const CPU_DEFAULT_SP: u8 = 0xFF;
 const CPU_DEFAULT_STATUS: u8 = 0x20;
 
-// ==================== OPCODES START ====================
+#[derive(Debug, TryFromPrimitive)]
+#[repr(u8)]
+pub enum Opcode {
+    // JMP
+    JMPAbs = 0x4C,
+    JMPInd = 0x6C,
 
-// JMP
-const OPCODE_JMP_ABS: u8 = 0x4C;
-const OPCODE_JMP_IND: u8 = 0x6C;
+    // JSR
+    JSR = 0x20,
 
-// JSR
-const OPCODE_JSR: u8 = 0x20;
+    // LDA
+    LDAImm = 0xA9,
+    LDAZpg = 0xA5,
+    LDAZpx = 0xB5,
+    LDAAbs = 0xAD,
+    LDAAbx = 0xBD,
+    LDAAby = 0xB9,
+    LDAIdx = 0xA1,
+    LDAIdy = 0xB1,
 
-// LDA
-const OPCODE_LDA_IMM: u8 = 0xA9;
-const OPCODE_LDA_ZPG: u8 = 0xA5;
-const OPCODE_LDA_ZPX: u8 = 0xB5;
-const OPCODE_LDA_ABS: u8 = 0xAD;
-const OPCODE_LDA_ABX: u8 = 0xBD;
-const OPCODE_LDA_ABY: u8 = 0xB9;
-const OPCODE_LDA_IDX: u8 = 0xA1;
-const OPCODE_LDA_IDY: u8 = 0xB1;
+    // LDX
+    LDXImm = 0xA2,
+    LDXZpg = 0xA6,
+    LDXZpy = 0xB6,
+    LDXAbs = 0xAE,
+    LDXAby = 0xBE,
 
-// LDX
-const OPCODE_LDX_IMM: u8 = 0xA2;
-const OPCODE_LDX_ZPG: u8 = 0xA6;
-const OPCODE_LDX_ZPY: u8 = 0xB6;
-const OPCODE_LDX_ABS: u8 = 0xAE;
-const OPCODE_LDX_ABY: u8 = 0xBE;
+    // LDY
+    LDYImm = 0xA0,
+    LDYZpg = 0xA4,
+    LDYZpx = 0xB4,
+    LDYAbs = 0xAC,
+    LDYAbx = 0xBC,
 
-// LDY
-const OPCODE_LDY_IMM: u8 = 0xA0;
-const OPCODE_LDY_ZPG: u8 = 0xA4;
-const OPCODE_LDY_ZPX: u8 = 0xB4;
-const OPCODE_LDY_ABS: u8 = 0xAC;
-const OPCODE_LDY_ABX: u8 = 0xBC;
+    // STA
+    STAZpg = 0x85,
+    STAZpx = 0x95,
+    STAAbs = 0x8D,
+    STAAbx = 0x9D,
+    STAAby = 0x99,
+    STAIdx = 0x81,
+    STAIdy = 0x91,
 
-// STA
-const OPCODE_STA_ZPG: u8 = 0x85;
-const OPCODE_STA_ZPX: u8 = 0x95;
-const OPCODE_STA_ABS: u8 = 0x8D;
-const OPCODE_STA_ABX: u8 = 0x9D;
-const OPCODE_STA_ABY: u8 = 0x99;
-const OPCODE_STA_IDX: u8 = 0x81;
-const OPCODE_STA_IDY: u8 = 0x91;
+    // STX
+    STXZpg = 0x86,
+    STXZpy = 0x96,
+    STXAbs = 0x8E,
 
-// STX
-const OPCODE_STX_ZPG: u8 = 0x86;
-const OPCODE_STX_ZPY: u8 = 0x96;
-const OPCODE_STX_ABS: u8 = 0x8E;
-
-// STY
-const OPCODE_STY_ZPG: u8 = 0x84;
-const OPCODE_STY_ZPX: u8 = 0x94;
-const OPCODE_STY_ABS: u8 = 0x8C;
-
-// ==================== OPCODES END =====================
+    // STY
+    STYZpg = 0x84,
+    STYZpx = 0x94,
+    STYAbs = 0x8C,
+}
 
 pub struct CPU {
     acc: u8,
@@ -122,52 +125,59 @@ impl CPU {
     }
 
     fn execute_next_instruction(&mut self) {
-        let opcode = self.fetch_byte();
+        let opcode_byte = self.fetch_byte();
+        let opcode = Opcode::try_from(opcode_byte).expect("Invalid opcode");
+
         match opcode {
             // JMP
-            OPCODE_JMP_ABS => jmp_abs(self),
-            OPCODE_JMP_IND => jmp_ind(self),
+            Opcode::JMPAbs => jmp_abs(self),
+            Opcode::JMPInd => jmp_ind(self),
+
             // JSR
-            OPCODE_JSR => jsr(self),
+            Opcode::JSR => jsr(self),
+
             // LDA
-            OPCODE_LDA_IMM => lda_immediate(self),
-            OPCODE_LDA_ZPG => lda_zero_page(self),
-            OPCODE_LDA_ZPX => lda_zero_page_x(self),
-            OPCODE_LDA_ABS => lda_absolute(self),
-            OPCODE_LDA_ABX => lda_absolute_x(self),
-            OPCODE_LDA_ABY => lda_absolute_y(self),
-            OPCODE_LDA_IDX => lda_indirect_x(self),
-            OPCODE_LDA_IDY => lda_indirect_y(self),
+            Opcode::LDAImm => lda_immediate(self),
+            Opcode::LDAZpg => lda_zero_page(self),
+            Opcode::LDAZpx => lda_zero_page_x(self),
+            Opcode::LDAAbs => lda_absolute(self),
+            Opcode::LDAAbx => lda_absolute_x(self),
+            Opcode::LDAAby => lda_absolute_y(self),
+            Opcode::LDAIdx => lda_indirect_x(self),
+            Opcode::LDAIdy => lda_indirect_y(self),
+
             // LDX
-            OPCODE_LDX_IMM => ldx_immediate(self),
-            OPCODE_LDX_ZPG => ldx_zero_page(self),
-            OPCODE_LDX_ZPY => ldx_zero_page_y(self),
-            OPCODE_LDX_ABS => ldx_absolute(self),
-            OPCODE_LDX_ABY => ldx_absolute_y(self),
+            Opcode::LDXImm => ldx_immediate(self),
+            Opcode::LDXZpg => ldx_zero_page(self),
+            Opcode::LDXZpy => ldx_zero_page_y(self),
+            Opcode::LDXAbs => ldx_absolute(self),
+            Opcode::LDXAby => ldx_absolute_y(self),
+
             // LDY
-            OPCODE_LDY_IMM => ldy_immediate(self),
-            OPCODE_LDY_ZPG => ldy_zero_page(self),
-            OPCODE_LDY_ZPX => ldy_zero_page_x(self),
-            OPCODE_LDY_ABS => ldy_absolute(self),
-            OPCODE_LDY_ABX => ldy_absolute_x(self),
+            Opcode::LDYImm => ldy_immediate(self),
+            Opcode::LDYZpg => ldy_zero_page(self),
+            Opcode::LDYZpx => ldy_zero_page_x(self),
+            Opcode::LDYAbs => ldy_absolute(self),
+            Opcode::LDYAbx => ldy_absolute_x(self),
+
             // STA
-            OPCODE_STA_ZPG => sta_zero_page(self),
-            OPCODE_STA_ZPX => sta_zero_page_x(self),
-            OPCODE_STA_ABS => sta_absolute(self),
-            OPCODE_STA_ABX => sta_absolute_x(self),
-            OPCODE_STA_ABY => sta_absolute_y(self),
-            OPCODE_STA_IDX => sta_indirect_x(self),
-            OPCODE_STA_IDY => sta_indirect_y(self),
+            Opcode::STAZpg => sta_zero_page(self),
+            Opcode::STAZpx => sta_zero_page_x(self),
+            Opcode::STAAbs => sta_absolute(self),
+            Opcode::STAAbx => sta_absolute_x(self),
+            Opcode::STAAby => sta_absolute_y(self),
+            Opcode::STAIdx => sta_indirect_x(self),
+            Opcode::STAIdy => sta_indirect_y(self),
+
             // STX
-            OPCODE_STX_ZPG => stx_zero_page(self),
-            OPCODE_STX_ZPY => stx_zero_page_y(self),
-            OPCODE_STX_ABS => stx_absolute(self),
+            Opcode::STXZpg => stx_zero_page(self),
+            Opcode::STXZpy => stx_zero_page_y(self),
+            Opcode::STXAbs => stx_absolute(self),
+
             // STY
-            OPCODE_STY_ZPG => sty_zero_page(self),
-            OPCODE_STY_ZPX => sty_zero_page_x(self),
-            OPCODE_STY_ABS => sty_absolute(self),
-            // UNREACHABLE
-            _ => unreachable!("invalid opcode: {:#X}", opcode),
+            Opcode::STYZpg => sty_zero_page(self),
+            Opcode::STYZpx => sty_zero_page_x(self),
+            Opcode::STYAbs => sty_absolute(self),
         }
     }
 

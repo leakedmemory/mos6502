@@ -7,3 +7,4 @@ license = "MIT"
 keywords = ["emulator", "6502"]
 
 [dependencies]
+num_enum = "0.7.2"

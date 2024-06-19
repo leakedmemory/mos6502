@@ -64,8 +64,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::cpu::{
-        CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, OPCODE_LDX_ABS, OPCODE_LDX_ABY,
-        OPCODE_LDX_IMM, OPCODE_LDX_ZPG, OPCODE_LDX_ZPY, UNRESERVED_MEMORY_ADDR_START,
+        Opcode, CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, UNRESERVED_MEMORY_ADDR_START,
     };
     use crate::memory::Memory;
 
@@ -76,11 +75,15 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_IMM, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXImm as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
-        memory.borrow_mut().write(OPCODE_LDX_IMM, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXImm as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x00, MEM_OFFSET + 3);
-        memory.borrow_mut().write(OPCODE_LDX_IMM, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXImm as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
@@ -118,13 +121,17 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_ZPG, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXZpg as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x32, 0x42);
-        memory.borrow_mut().write(OPCODE_LDX_ZPG, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXZpg as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x00, 0x57);
-        memory.borrow_mut().write(OPCODE_LDX_ZPG, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXZpg as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
         memory.borrow_mut().write(0x80, 0x69);
 
@@ -164,13 +171,17 @@ mod tests {
         const Y: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_ZPY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXZpy as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x32, Y.wrapping_add(0x42).into());
-        memory.borrow_mut().write(OPCODE_LDX_ZPY, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXZpy as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x00, Y.wrapping_add(0x57).into());
-        memory.borrow_mut().write(OPCODE_LDX_ZPY, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXZpy as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
         memory.borrow_mut().write(0x80, Y.wrapping_add(0x69).into());
 
@@ -210,15 +221,19 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_ABS, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXAbs as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x42, 0x8028);
-        memory.borrow_mut().write(OPCODE_LDX_ABS, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAbs as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
         memory.borrow_mut().write(0x00, 0x2697);
-        memory.borrow_mut().write(OPCODE_LDX_ABS, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAbs as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
         memory.borrow_mut().write(0x80, 0x5570);
@@ -259,19 +274,23 @@ mod tests {
         const Y: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXAby as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
         memory
             .borrow_mut()
             .write(0x42, (Y as u16).wrapping_add(0x8028));
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAby as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x53, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
         memory
             .borrow_mut()
             .write(0x00, (Y as u16).wrapping_add(0x2653));
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAby as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x22, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
         memory
@@ -315,19 +334,23 @@ mod tests {
         const Y: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::LDXAby as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x60, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
         memory
             .borrow_mut()
             .write(0x42, (Y as u16).wrapping_add(0x8060));
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAby as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x54, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
         memory
             .borrow_mut()
             .write(0x00, (Y as u16).wrapping_add(0x2654));
-        memory.borrow_mut().write(OPCODE_LDX_ABY, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::LDXAby as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x83, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
         memory

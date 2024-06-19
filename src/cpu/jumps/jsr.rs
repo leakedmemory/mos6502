@@ -15,7 +15,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::cpu::{
-        CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, OPCODE_JSR, OPCODE_LDA_IMM, SYS_STACK_ADDR_END,
+        Opcode, CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, SYS_STACK_ADDR_END,
         UNRESERVED_MEMORY_ADDR_START,
     };
     use crate::memory::Memory;
@@ -27,10 +27,10 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_JSR, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::JSR as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x30, MEM_OFFSET + 2);
-        memory.borrow_mut().write(OPCODE_LDA_IMM, 0x3042);
+        memory.borrow_mut().write(Opcode::LDAImm as u8, 0x3042);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
         cpu.reset();
@@ -39,7 +39,7 @@ mod tests {
         let init_cycles = cpu.cycles;
         cpu.execute_next_instruction();
         assert_eq!(cpu.pc, 0x3042);
-        assert_eq!(cpu.memory.borrow().read(cpu.pc), OPCODE_LDA_IMM);
+        assert_eq!(cpu.memory.borrow().read(cpu.pc), Opcode::LDAImm as u8);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.sp, CPU_DEFAULT_SP - 2);
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);

@@ -72,10 +72,7 @@ pub(in crate::cpu) fn sta_indirect_y(cpu: &mut CPU) {
 mod tests {
     use std::rc::Rc;
 
-    use crate::cpu::{
-        CPU, CPU_DEFAULT_STATUS, OPCODE_STA_ABS, OPCODE_STA_ABX, OPCODE_STA_ABY, OPCODE_STA_IDX,
-        OPCODE_STA_IDY, OPCODE_STA_ZPG, OPCODE_STA_ZPX, UNRESERVED_MEMORY_ADDR_START,
-    };
+    use crate::cpu::{Opcode, CPU, CPU_DEFAULT_STATUS, UNRESERVED_MEMORY_ADDR_START};
     use crate::memory::Memory;
 
     #[test]
@@ -85,11 +82,15 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STA_ZPG, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAZpg as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
-        memory.borrow_mut().write(OPCODE_STA_ZPG, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAZpg as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
-        memory.borrow_mut().write(OPCODE_STA_ZPG, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAZpg as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
@@ -131,11 +132,15 @@ mod tests {
         const X: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STA_ZPX, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAZpx as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
-        memory.borrow_mut().write(OPCODE_STA_ZPX, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAZpx as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
-        memory.borrow_mut().write(OPCODE_STA_ZPX, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAZpx as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
@@ -177,13 +182,17 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STA_ABS, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAAbs as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
-        memory.borrow_mut().write(OPCODE_STA_ABS, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAbs as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
-        memory.borrow_mut().write(OPCODE_STA_ABS, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAbs as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
 
@@ -226,13 +235,17 @@ mod tests {
         const X: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STA_ABX, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAAbx as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
-        memory.borrow_mut().write(OPCODE_STA_ABX, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAbx as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
-        memory.borrow_mut().write(OPCODE_STA_ABX, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAbx as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
 
@@ -285,13 +298,17 @@ mod tests {
         const Y: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STA_ABY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAAby as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
-        memory.borrow_mut().write(OPCODE_STA_ABY, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAby as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
-        memory.borrow_mut().write(OPCODE_STA_ABY, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAAby as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
 
@@ -345,7 +362,7 @@ mod tests {
 
         let memory = Memory::new();
 
-        memory.borrow_mut().write(OPCODE_STA_IDX, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAIdx as u8, MEM_OFFSET);
         let zpg_addr = 0x08;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 1);
         let addr_l = X.wrapping_add(zpg_addr);
@@ -353,7 +370,9 @@ mod tests {
         memory.borrow_mut().write(0x22, addr_l.into());
         memory.borrow_mut().write(0x32, addr_h.into());
 
-        memory.borrow_mut().write(OPCODE_STA_IDX, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAIdx as u8, MEM_OFFSET + 2);
         let zpg_addr = 0x57;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 3);
         let addr_l = X.wrapping_add(zpg_addr);
@@ -361,7 +380,9 @@ mod tests {
         memory.borrow_mut().write(0x46, addr_l.into());
         memory.borrow_mut().write(0x83, addr_h.into());
 
-        memory.borrow_mut().write(OPCODE_STA_IDX, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAIdx as u8, MEM_OFFSET + 4);
         let zpg_addr = 0x69;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 5);
         let addr_l = X.wrapping_add(zpg_addr);
@@ -410,7 +431,7 @@ mod tests {
 
         let memory = Memory::new();
 
-        memory.borrow_mut().write(OPCODE_STA_IDY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STAIdy as u8, MEM_OFFSET);
         let zpg_addr = 0x08;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 1);
         let addr_l = 0xDF;
@@ -420,7 +441,9 @@ mod tests {
             .borrow_mut()
             .write(addr_h, zpg_addr.wrapping_add(1).into());
 
-        memory.borrow_mut().write(OPCODE_STA_IDY, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAIdy as u8, MEM_OFFSET + 2);
         let zpg_addr = 0x57;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 3);
         let addr_l = 0xCC;
@@ -430,7 +453,9 @@ mod tests {
             .borrow_mut()
             .write(addr_h, zpg_addr.wrapping_add(1).into());
 
-        memory.borrow_mut().write(OPCODE_STA_IDY, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STAIdy as u8, MEM_OFFSET + 4);
         let zpg_addr = 0x69;
         memory.borrow_mut().write(zpg_addr, MEM_OFFSET + 5);
         let addr_l = 0x86;

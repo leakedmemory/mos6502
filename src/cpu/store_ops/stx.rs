@@ -30,10 +30,7 @@ pub(in crate::cpu) fn stx_absolute(cpu: &mut CPU) {
 mod tests {
     use std::rc::Rc;
 
-    use crate::cpu::{
-        CPU, CPU_DEFAULT_STATUS, OPCODE_STX_ABS, OPCODE_STX_ZPG, OPCODE_STX_ZPY,
-        UNRESERVED_MEMORY_ADDR_START,
-    };
+    use crate::cpu::{Opcode, CPU, CPU_DEFAULT_STATUS, UNRESERVED_MEMORY_ADDR_START};
     use crate::memory::Memory;
 
     #[test]
@@ -43,11 +40,15 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STX_ZPG, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STXZpg as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
-        memory.borrow_mut().write(OPCODE_STX_ZPG, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXZpg as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
-        memory.borrow_mut().write(OPCODE_STX_ZPG, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXZpg as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
@@ -89,11 +90,15 @@ mod tests {
         const Y: u8 = 0xAC;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STX_ZPY, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STXZpy as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x42, MEM_OFFSET + 1);
-        memory.borrow_mut().write(OPCODE_STX_ZPY, MEM_OFFSET + 2);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXZpy as u8, MEM_OFFSET + 2);
         memory.borrow_mut().write(0x57, MEM_OFFSET + 3);
-        memory.borrow_mut().write(OPCODE_STX_ZPY, MEM_OFFSET + 4);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXZpy as u8, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x69, MEM_OFFSET + 5);
 
         let mut cpu = CPU::new(Rc::clone(&memory));
@@ -135,13 +140,17 @@ mod tests {
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
         let memory = Memory::new();
-        memory.borrow_mut().write(OPCODE_STX_ABS, MEM_OFFSET);
+        memory.borrow_mut().write(Opcode::STXAbs as u8, MEM_OFFSET);
         memory.borrow_mut().write(0x28, MEM_OFFSET + 1);
         memory.borrow_mut().write(0x80, MEM_OFFSET + 2);
-        memory.borrow_mut().write(OPCODE_STX_ABS, MEM_OFFSET + 3);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXAbs as u8, MEM_OFFSET + 3);
         memory.borrow_mut().write(0x97, MEM_OFFSET + 4);
         memory.borrow_mut().write(0x26, MEM_OFFSET + 5);
-        memory.borrow_mut().write(OPCODE_STX_ABS, MEM_OFFSET + 6);
+        memory
+            .borrow_mut()
+            .write(Opcode::STXAbs as u8, MEM_OFFSET + 6);
         memory.borrow_mut().write(0x70, MEM_OFFSET + 7);
         memory.borrow_mut().write(0x55, MEM_OFFSET + 8);
 
