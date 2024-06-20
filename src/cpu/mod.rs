@@ -1,5 +1,6 @@
 mod jumps;
 mod load_ops;
+mod stack_ops;
 mod store_ops;
 
 use std::cell::RefCell;
@@ -12,6 +13,7 @@ use crate::memory::Memory;
 
 use jumps::*;
 use load_ops::*;
+use stack_ops::*;
 use store_ops::*;
 
 const CSF_ZERO: u8 = 0x02;
@@ -36,6 +38,9 @@ pub enum Opcode {
     JMPInd = 0x6C,
     JSR = 0x20,
     RTS = 0x60,
+
+    // stack
+    TSX = 0xBA,
 
     // LDA
     LDAImm = 0xA9,
@@ -181,6 +186,9 @@ impl CPU {
             Opcode::STYZpg => sty_zero_page(self),
             Opcode::STYZpx => sty_zero_page_x(self),
             Opcode::STYAbs => sty_absolute(self),
+
+            // TSX
+            Opcode::TSX => tsx(self),
         }
     }
 
