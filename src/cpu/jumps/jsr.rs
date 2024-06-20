@@ -41,17 +41,17 @@ mod tests {
         assert_eq!(cpu.pc, 0x3042);
         assert_eq!(cpu.memory.borrow().read(cpu.pc), Opcode::LDAImm as u8);
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
-        assert_eq!(cpu.sp, CPU_DEFAULT_SP - 2);
+        assert_eq!(cpu.sp, CPU_DEFAULT_SP.wrapping_sub(2));
         assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
 
         let stack_pc_l = cpu
             .memory
             .borrow()
-            .read((cpu.sp + 1) as u16 | SYS_STACK_ADDR_END);
+            .read(cpu.sp.wrapping_add(1) as u16 | SYS_STACK_ADDR_END);
         let stack_pc_h = cpu
             .memory
             .borrow()
-            .read((cpu.sp + 2) as u16 | SYS_STACK_ADDR_END);
+            .read(cpu.sp.wrapping_add(2) as u16 | SYS_STACK_ADDR_END);
         let stack_pc = (stack_pc_h as u16) << 8 | stack_pc_l as u16;
         assert_eq!(stack_pc + 1 - init_pc, BYTES);
     }
