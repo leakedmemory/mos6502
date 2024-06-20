@@ -41,6 +41,7 @@ pub enum Opcode {
 
     // stack
     TSX = 0xBA,
+    TXS = 0x9A,
 
     // LDA
     LDAImm = 0xA9,
@@ -189,6 +190,9 @@ impl CPU {
 
             // TSX
             Opcode::TSX => tsx(self),
+
+            // TXS
+            Opcode::TXS => txs(self),
         }
     }
 
