@@ -33,16 +33,12 @@ const CPU_DEFAULT_STATUS: u8 = 0x20;
 #[derive(Debug, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Opcode {
-    // jumps
+    // JMP
     JMPAbs = 0x4C,
     JMPInd = 0x6C,
-    JSR = 0x20,
-    RTS = 0x60,
 
-    // stack
-    TSX = 0xBA,
-    TXS = 0x9A,
-    PHA = 0x48,
+    // JSR
+    JSR = 0x20,
 
     // LDA
     LDAImm = 0xA9,
@@ -68,6 +64,15 @@ pub enum Opcode {
     LDYAbs = 0xAC,
     LDYAbx = 0xBC,
 
+    // RTS
+    RTS = 0x60,
+
+    // PHA
+    PHA = 0x48,
+
+    // PHP
+    PHP = 0x08,
+
     // STA
     STAZpg = 0x85,
     STAZpx = 0x95,
@@ -86,6 +91,12 @@ pub enum Opcode {
     STYZpg = 0x84,
     STYZpx = 0x94,
     STYAbs = 0x8C,
+
+    // TSX
+    TSX = 0xBA,
+
+    // TXS
+    TXS = 0x9A,
 }
 
 pub struct CPU {
@@ -169,6 +180,9 @@ impl CPU {
 
             // PHA
             Opcode::PHA => pha(self),
+
+            // PHS
+            Opcode::PHP => php(self),
 
             // RTS
             Opcode::RTS => rts(self),
