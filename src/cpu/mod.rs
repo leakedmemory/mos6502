@@ -42,6 +42,7 @@ pub enum Opcode {
     // stack
     TSX = 0xBA,
     TXS = 0x9A,
+    PHA = 0x48,
 
     // LDA
     LDAImm = 0xA9,
@@ -165,6 +166,9 @@ impl CPU {
             Opcode::LDYZpx => ldy_zero_page_x(self),
             Opcode::LDYAbs => ldy_absolute(self),
             Opcode::LDYAbx => ldy_absolute_x(self),
+
+            // PHA
+            Opcode::PHA => pha(self),
 
             // RTS
             Opcode::RTS => rts(self),
