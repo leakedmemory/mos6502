@@ -73,6 +73,9 @@ pub enum Opcode {
     // PLA
     PLA = 0x68,
 
+    // PLP
+    PLP = 0x28,
+
     // RTS
     RTS = 0x60,
 
@@ -189,6 +192,9 @@ impl CPU {
 
             // PLA
             Opcode::PLA => pla(self),
+
+            // PLP
+            Opcode::PLP => plp(self),
 
             // RTS
             Opcode::RTS => rts(self),
