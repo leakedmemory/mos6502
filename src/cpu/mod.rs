@@ -64,14 +64,17 @@ pub enum Opcode {
     LDYAbs = 0xAC,
     LDYAbx = 0xBC,
 
-    // RTS
-    RTS = 0x60,
-
     // PHA
     PHA = 0x48,
 
     // PHP
     PHP = 0x08,
+
+    // PLA
+    PLA = 0x68,
+
+    // RTS
+    RTS = 0x60,
 
     // STA
     STAZpg = 0x85,
@@ -183,6 +186,9 @@ impl CPU {
 
             // PHS
             Opcode::PHP => php(self),
+
+            // PLA
+            Opcode::PLA => pla(self),
 
             // RTS
             Opcode::RTS => rts(self),
