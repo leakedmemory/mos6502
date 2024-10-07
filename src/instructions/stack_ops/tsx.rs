@@ -12,7 +12,7 @@ fn tsx_set_status(cpu: &mut CPU) {
 /// bytes: 1
 /// cycles: 2
 /// flags affected: N,Z
-pub(in crate::cpu) fn tsx(cpu: &mut CPU) {
+pub(crate) fn tsx(cpu: &mut CPU) {
     cpu.x = cpu.sp;
     tsx_set_status(cpu);
     cpu.cycles += 1;

@@ -3,7 +3,7 @@ use crate::cpu::CPU;
 /// bytes: 2
 /// cycles: 3
 /// flags affected: none
-pub(in crate::cpu) fn sta_zero_page(cpu: &mut CPU) {
+pub(crate) fn sta_zero_page(cpu: &mut CPU) {
     let addr = cpu.fetch_byte();
     cpu.write_byte(cpu.acc, addr.into());
 }
@@ -11,7 +11,7 @@ pub(in crate::cpu) fn sta_zero_page(cpu: &mut CPU) {
 /// bytes: 2
 /// cycles: 4
 /// flags affected: none
-pub(in crate::cpu) fn sta_zero_page_x(cpu: &mut CPU) {
+pub(crate) fn sta_zero_page_x(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let eff_addr = zpg_addr.wrapping_add(cpu.x);
     cpu.cycles += 1;
@@ -21,7 +21,7 @@ pub(in crate::cpu) fn sta_zero_page_x(cpu: &mut CPU) {
 /// bytes: 3
 /// cycles: 4
 /// flags affected: none
-pub(in crate::cpu) fn sta_absolute(cpu: &mut CPU) {
+pub(crate) fn sta_absolute(cpu: &mut CPU) {
     let addr = cpu.fetch_addr();
     cpu.write_byte(cpu.acc, addr);
 }
@@ -29,7 +29,7 @@ pub(in crate::cpu) fn sta_absolute(cpu: &mut CPU) {
 /// bytes: 3
 /// cycles: 5
 /// flags affected: none
-pub(in crate::cpu) fn sta_absolute_x(cpu: &mut CPU) {
+pub(crate) fn sta_absolute_x(cpu: &mut CPU) {
     let abs_addr = cpu.fetch_addr();
     let eff_addr = abs_addr.wrapping_add(cpu.x.into());
     cpu.cycles += 1;
@@ -39,7 +39,7 @@ pub(in crate::cpu) fn sta_absolute_x(cpu: &mut CPU) {
 /// bytes: 3
 /// cycles: 5
 /// flags affected: none
-pub(in crate::cpu) fn sta_absolute_y(cpu: &mut CPU) {
+pub(crate) fn sta_absolute_y(cpu: &mut CPU) {
     let abs_addr = cpu.fetch_addr();
     let eff_addr = abs_addr.wrapping_add(cpu.y.into());
     cpu.cycles += 1;
@@ -49,7 +49,7 @@ pub(in crate::cpu) fn sta_absolute_y(cpu: &mut CPU) {
 /// bytes: 2
 /// cycles: 6
 /// flags affected: none
-pub(in crate::cpu) fn sta_indirect_x(cpu: &mut CPU) {
+pub(crate) fn sta_indirect_x(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let ind_addr = zpg_addr.wrapping_add(cpu.x.into());
     cpu.cycles += 1;
@@ -60,7 +60,7 @@ pub(in crate::cpu) fn sta_indirect_x(cpu: &mut CPU) {
 /// bytes: 2
 /// cycles: 6
 /// flags affected: none
-pub(in crate::cpu) fn sta_indirect_y(cpu: &mut CPU) {
+pub(crate) fn sta_indirect_y(cpu: &mut CPU) {
     let zpg_addr = cpu.fetch_byte();
     let ind_addr = cpu.read_addr(zpg_addr.into(), zpg_addr.wrapping_add(1).into());
     let eff_addr = ind_addr.wrapping_add(cpu.y.into());

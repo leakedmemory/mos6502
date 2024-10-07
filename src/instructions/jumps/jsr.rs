@@ -3,7 +3,7 @@ use crate::cpu::CPU;
 /// bytes: 3
 /// cycles: 6
 /// flags affected: none
-pub(in crate::cpu) fn jsr(cpu: &mut CPU) {
+pub(crate) fn jsr(cpu: &mut CPU) {
     let addr = cpu.fetch_addr();
     cpu.push_addr_to_stack(cpu.pc - 1);
     cpu.pc = addr; // takes 1 cycle

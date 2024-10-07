@@ -1,32 +1,26 @@
-mod jumps;
-mod load_ops;
-mod stack_ops;
-mod store_ops;
-
 use std::convert::TryFrom;
 
 use num_enum::TryFromPrimitive;
 
+use crate::instructions::jumps::*;
+use crate::instructions::load_ops::*;
+use crate::instructions::stack_ops::*;
+use crate::instructions::store_ops::*;
 use crate::memory::Memory;
 
-use jumps::*;
-use load_ops::*;
-use stack_ops::*;
-use store_ops::*;
+pub(crate) const CSF_ZERO: u8 = 0x02;
+pub(crate) const CSF_NEGATIVE: u8 = 0x80;
 
-const CSF_ZERO: u8 = 0x02;
-const CSF_NEGATIVE: u8 = 0x80;
-
-const SYS_STACK_ADDR_END: u16 = 0x100;
+pub(crate) const SYS_STACK_ADDR_END: u16 = 0x100;
 pub(crate) const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200;
 pub(crate) const POWER_ON_RESET_ADDR_L: u16 = 0xFFFC;
 pub(crate) const POWER_ON_RESET_ADDR_H: u16 = 0xFFFD;
 
-const CPU_DEFAULT_ACC: u8 = 0;
-const CPU_DEFAULT_X: u8 = 0;
-const CPU_DEFAULT_Y: u8 = 0;
-const CPU_DEFAULT_SP: u8 = 0xFF;
-const CPU_DEFAULT_STATUS: u8 = 0x20;
+pub(crate) const CPU_DEFAULT_ACC: u8 = 0;
+pub(crate) const CPU_DEFAULT_X: u8 = 0;
+pub(crate) const CPU_DEFAULT_Y: u8 = 0;
+pub(crate) const CPU_DEFAULT_SP: u8 = 0xFF;
+pub(crate) const CPU_DEFAULT_STATUS: u8 = 0x20;
 
 #[derive(Debug, TryFromPrimitive)]
 #[repr(u8)]
@@ -104,14 +98,14 @@ pub enum Opcode {
 }
 
 pub struct CPU {
-    acc: u8,
-    x: u8,
-    y: u8,
-    sp: u8,
-    pc: u16,
-    status: u8,
-    cycles: u64,
-    memory: Memory,
+    pub(crate) acc: u8,
+    pub(crate) x: u8,
+    pub(crate) y: u8,
+    pub(crate) sp: u8,
+    pub(crate) pc: u16,
+    pub(crate) status: u8,
+    pub(crate) cycles: u64,
+    pub(crate) memory: Memory,
 }
 
 impl CPU {
@@ -145,7 +139,7 @@ impl CPU {
         }
     }
 
-    fn execute_next_instruction(&mut self) {
+    pub(crate) fn execute_next_instruction(&mut self) {
         let opcode_byte = self.fetch_byte();
         let opcode =
             Opcode::try_from(opcode_byte).expect(&format!("Invalid opcode: {:#04X}", opcode_byte));
@@ -230,7 +224,7 @@ impl CPU {
     }
 
     /// reads a byte from program counter and increments it in 1 cycle
-    fn fetch_byte(&mut self) -> u8 {
+    pub(crate) fn fetch_byte(&mut self) -> u8 {
         let byte = self.memory.read(self.pc);
         self.increment_pc();
         self.cycles += 1;
@@ -239,14 +233,14 @@ impl CPU {
 
     /// reads an addr from the program counter and increments it by 2,
     /// in 2 cycles
-    fn fetch_addr(&mut self) -> u16 {
+    pub(crate) fn fetch_addr(&mut self) -> u16 {
         let addr_l = self.fetch_byte() as u16;
         let addr_h = self.fetch_byte() as u16;
         (addr_h << 8) | addr_l
     }
 
     /// reads a byte from `addr` in 1 cycle
-    fn read_byte(&mut self, addr: u16) -> u8 {
+    pub(crate) fn read_byte(&mut self, addr: u16) -> u8 {
         let byte = self.memory.read(addr);
         self.cycles += 1;
         byte
@@ -254,21 +248,21 @@ impl CPU {
 
     /// reads an addr using the value in `low` as the low byte
     /// and in `high` as the high byte of the addr, in 2 cycles
-    fn read_addr(&mut self, low: u16, high: u16) -> u16 {
+    pub(crate) fn read_addr(&mut self, low: u16, high: u16) -> u16 {
         let addr_l = self.read_byte(low);
         let addr_h = self.read_byte(high);
         (addr_h as u16) << 8 | addr_l as u16
     }
 
     /// writes a byte into the `addr` in 1 cycle
-    fn write_byte(&mut self, byte: u8, addr: u16) {
+    pub(crate) fn write_byte(&mut self, byte: u8, addr: u16) {
         self.memory.write(byte, addr);
         self.cycles += 1;
     }
 
     /// pushes a `byte` to the stack, wrapping around when ovewflowing or
     /// underflowing, in 1 cycle
-    fn push_byte_to_stack(&mut self, byte: u8) {
+    pub(crate) fn push_byte_to_stack(&mut self, byte: u8) {
         let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
         self.memory.write(byte, stack_addr);
         self.sp = self.sp.wrapping_sub(1);
@@ -277,7 +271,7 @@ impl CPU {
 
     /// pushes an `addr` to the stack, wrapping around when overflowing or
     /// underflowing, in 2 cycles
-    fn push_addr_to_stack(&mut self, addr: u16) {
+    pub(crate) fn push_addr_to_stack(&mut self, addr: u16) {
         let addr_h = (addr >> 8) as u8;
         let addr_l = addr as u8;
         self.push_byte_to_stack(addr_h);
@@ -286,7 +280,7 @@ impl CPU {
 
     /// pops a byte from the stack, wrapping around when overflowing or
     /// underflowing, in 2 cycles
-    fn pop_byte_from_stack(&mut self) -> u8 {
+    pub(crate) fn pop_byte_from_stack(&mut self) -> u8 {
         self.sp = self.sp.wrapping_add(1); // takes 1 cycle
         let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
         let byte = self.memory.read(stack_addr);
@@ -296,21 +290,21 @@ impl CPU {
 
     /// pops an addr from the stack, wrapping around when overflowing or
     /// underflowing, in 4 cycles
-    fn pop_addr_from_stack(&mut self) -> u16 {
+    pub(crate) fn pop_addr_from_stack(&mut self) -> u16 {
         let addr_l = self.pop_byte_from_stack();
         let addr_h = self.pop_byte_from_stack();
         (addr_h as u16) << 8 | addr_l as u16
     }
 
     #[inline(always)]
-    fn byte_is_negative_int(byte: u8) -> bool {
+    pub(crate) fn byte_is_negative_int(byte: u8) -> bool {
         byte & 0x80 != 0
     }
 
     // often used to know the need of another add operation with the high 8 bits
     // of the address, since the 6502's adder circuit only works with 8 bits
     #[inline(always)]
-    fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
+    pub(crate) fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
         (addr_a & 0xFF00) != (addr_b & 0xFF00)
     }
 }

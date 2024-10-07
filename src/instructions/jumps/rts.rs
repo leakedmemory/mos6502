@@ -3,7 +3,7 @@ use crate::cpu::CPU;
 /// bytes: 1
 /// cycles: 6
 /// flags affected: none
-pub(in crate::cpu) fn rts(cpu: &mut CPU) {
+pub(crate) fn rts(cpu: &mut CPU) {
     let addr = cpu.pop_addr_from_stack();
     cpu.pc = addr + 1; // takes 1 cycle
     cpu.cycles += 1;

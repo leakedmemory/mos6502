@@ -3,14 +3,14 @@ use crate::cpu::{CPU, POWER_ON_RESET_ADDR_L};
 /// bytes: 3
 /// cycles: 3
 /// flags affected: none
-pub(in crate::cpu) fn jmp_abs(cpu: &mut CPU) {
+pub(crate) fn jmp_abs(cpu: &mut CPU) {
     cpu.pc = cpu.fetch_addr();
 }
 
 /// bytes: 3
 /// cycles: 5
 /// flags affected: none
-pub(in crate::cpu) fn jmp_ind(cpu: &mut CPU) {
+pub(crate) fn jmp_ind(cpu: &mut CPU) {
     // hardware bug if LSB is 0xFF
     // http://www.6502.org/users/obelisk/6502/reference.html#JMP
     let ind_addr = cpu.fetch_addr();
