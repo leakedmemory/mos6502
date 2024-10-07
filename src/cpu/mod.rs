@@ -3,9 +3,7 @@ mod load_ops;
 mod stack_ops;
 mod store_ops;
 
-use std::cell::RefCell;
 use std::convert::TryFrom;
-use std::rc::Rc;
 
 use num_enum::TryFromPrimitive;
 
@@ -113,11 +111,11 @@ pub struct CPU {
     pc: u16,
     status: u8,
     cycles: u64,
-    memory: Rc<RefCell<Memory>>,
+    memory: Memory,
 }
 
 impl CPU {
-    pub fn new(memory: Rc<RefCell<Memory>>) -> Self {
+    pub fn new(memory: Memory) -> Self {
         Self {
             acc: 0,
             x: 0,
@@ -135,8 +133,8 @@ impl CPU {
         self.x = CPU_DEFAULT_X;
         self.y = CPU_DEFAULT_Y;
         self.sp = CPU_DEFAULT_SP;
-        self.pc = ((self.memory.borrow().read(POWER_ON_RESET_ADDR_H) as u16) << 8)
-            | (self.memory.borrow().read(POWER_ON_RESET_ADDR_L) as u16);
+        self.pc = ((self.memory.read(POWER_ON_RESET_ADDR_H) as u16) << 8)
+            | (self.memory.read(POWER_ON_RESET_ADDR_L) as u16);
         self.status = CPU_DEFAULT_STATUS;
         self.cycles = 7;
     }
@@ -233,7 +231,7 @@ impl CPU {
 
     /// reads a byte from program counter and increments it in 1 cycle
     fn fetch_byte(&mut self) -> u8 {
-        let byte = self.memory.borrow().read(self.pc);
+        let byte = self.memory.read(self.pc);
         self.increment_pc();
         self.cycles += 1;
         byte
@@ -249,7 +247,7 @@ impl CPU {
 
     /// reads a byte from `addr` in 1 cycle
     fn read_byte(&mut self, addr: u16) -> u8 {
-        let byte = self.memory.borrow().read(addr);
+        let byte = self.memory.read(addr);
         self.cycles += 1;
         byte
     }
@@ -264,7 +262,7 @@ impl CPU {
 
     /// writes a byte into the `addr` in 1 cycle
     fn write_byte(&mut self, byte: u8, addr: u16) {
-        self.memory.borrow_mut().write(byte, addr);
+        self.memory.write(byte, addr);
         self.cycles += 1;
     }
 
@@ -272,7 +270,7 @@ impl CPU {
     /// underflowing, in 1 cycle
     fn push_byte_to_stack(&mut self, byte: u8) {
         let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
-        self.memory.borrow_mut().write(byte, stack_addr);
+        self.memory.write(byte, stack_addr);
         self.sp = self.sp.wrapping_sub(1);
         self.cycles += 1;
     }
@@ -291,7 +289,7 @@ impl CPU {
     fn pop_byte_from_stack(&mut self) -> u8 {
         self.sp = self.sp.wrapping_add(1); // takes 1 cycle
         let stack_addr = self.sp as u16 | SYS_STACK_ADDR_END;
-        let byte = self.memory.borrow().read(stack_addr);
+        let byte = self.memory.read(stack_addr);
         self.cycles += 2;
         byte
     }

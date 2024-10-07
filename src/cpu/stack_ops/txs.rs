@@ -10,8 +10,6 @@ pub(in crate::cpu) fn txs(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::cpu::{Opcode, CPU, CPU_DEFAULT_STATUS, UNRESERVED_MEMORY_ADDR_START};
     use crate::memory::Memory;
 
@@ -21,12 +19,12 @@ mod tests {
         const CYCLES: u64 = 2;
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
-        let memory = Memory::new();
-        memory.borrow_mut().write(Opcode::TXS as u8, MEM_OFFSET);
-        memory.borrow_mut().write(Opcode::TXS as u8, MEM_OFFSET + 1);
-        memory.borrow_mut().write(Opcode::TXS as u8, MEM_OFFSET + 2);
+        let mut memory = Memory::new();
+        memory.write(Opcode::TXS as u8, MEM_OFFSET);
+        memory.write(Opcode::TXS as u8, MEM_OFFSET + 1);
+        memory.write(Opcode::TXS as u8, MEM_OFFSET + 2);
 
-        let mut cpu = CPU::new(Rc::clone(&memory));
+        let mut cpu = CPU::new(memory);
         cpu.reset();
 
         let init_pc = cpu.pc;

@@ -11,8 +11,6 @@ pub(in crate::cpu) fn php(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::cpu::{
         Opcode, CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO,
         SYS_STACK_ADDR_END, UNRESERVED_MEMORY_ADDR_START,
@@ -25,12 +23,12 @@ mod tests {
         const CYCLES: u64 = 3;
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
-        let memory = Memory::new();
-        memory.borrow_mut().write(Opcode::PHP as u8, MEM_OFFSET);
-        memory.borrow_mut().write(Opcode::PHP as u8, MEM_OFFSET + 1);
-        memory.borrow_mut().write(Opcode::PHP as u8, MEM_OFFSET + 2);
+        let mut memory = Memory::new();
+        memory.write(Opcode::PHP as u8, MEM_OFFSET);
+        memory.write(Opcode::PHP as u8, MEM_OFFSET + 1);
+        memory.write(Opcode::PHP as u8, MEM_OFFSET + 2);
 
-        let mut cpu = CPU::new(Rc::clone(&memory));
+        let mut cpu = CPU::new(memory);
         cpu.reset();
 
         let init_pc = cpu.pc;
@@ -41,8 +39,7 @@ mod tests {
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(
             cpu.status,
-            memory
-                .borrow()
+            cpu.memory
                 .read(cpu.sp.wrapping_add(1) as u16 | SYS_STACK_ADDR_END)
         );
 
@@ -55,8 +52,7 @@ mod tests {
         assert_eq!(cpu.cycles - cycles_after_first_exec, CYCLES);
         assert_eq!(
             cpu.status,
-            memory
-                .borrow()
+            cpu.memory
                 .read(cpu.sp.wrapping_add(1) as u16 | SYS_STACK_ADDR_END)
         );
 
@@ -69,8 +65,7 @@ mod tests {
         assert_eq!(cpu.cycles - cycles_after_second_exec, CYCLES);
         assert_eq!(
             cpu.status,
-            memory
-                .borrow()
+            cpu.memory
                 .read(cpu.sp.wrapping_add(1) as u16 | SYS_STACK_ADDR_END)
         );
     }

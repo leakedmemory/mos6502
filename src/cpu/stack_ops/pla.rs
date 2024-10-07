@@ -23,8 +23,6 @@ pub(in crate::cpu) fn pla(cpu: &mut CPU) {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::cpu::{
         Opcode, CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO,
         SYS_STACK_ADDR_END, UNRESERVED_MEMORY_ADDR_START,
@@ -37,23 +35,21 @@ mod tests {
         const CYCLES: u64 = 4;
         const MEM_OFFSET: u16 = UNRESERVED_MEMORY_ADDR_START;
 
-        let memory = Memory::new();
-        memory.borrow_mut().write(Opcode::PLA as u8, MEM_OFFSET);
-        memory
-            .borrow_mut()
-            .write(0x80, CPU_DEFAULT_SP as u16 | SYS_STACK_ADDR_END);
-        memory.borrow_mut().write(Opcode::PLA as u8, MEM_OFFSET + 1);
-        memory.borrow_mut().write(
+        let mut memory = Memory::new();
+        memory.write(Opcode::PLA as u8, MEM_OFFSET);
+        memory.write(0x80, CPU_DEFAULT_SP as u16 | SYS_STACK_ADDR_END);
+        memory.write(Opcode::PLA as u8, MEM_OFFSET + 1);
+        memory.write(
             0x00,
             CPU_DEFAULT_SP.wrapping_sub(1) as u16 | SYS_STACK_ADDR_END,
         );
-        memory.borrow_mut().write(Opcode::PLA as u8, MEM_OFFSET + 2);
-        memory.borrow_mut().write(
+        memory.write(Opcode::PLA as u8, MEM_OFFSET + 2);
+        memory.write(
             0x42,
             CPU_DEFAULT_SP.wrapping_sub(2) as u16 | SYS_STACK_ADDR_END,
         );
 
-        let mut cpu = CPU::new(Rc::clone(&memory));
+        let mut cpu = CPU::new(memory);
         cpu.reset();
         cpu.sp = CPU_DEFAULT_SP.wrapping_sub(3);
 
