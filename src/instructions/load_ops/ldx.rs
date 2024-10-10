@@ -71,7 +71,10 @@ impl LDX {
                 bytes: 3,
                 cycles: 4,
             },
-            _ => panic!("Invalid addressing mode for this instruction"),
+            _ => panic!(
+                "Invalid addressing mode for this instruction {:?}",
+                addr_mode
+            ),
         }
     }
 

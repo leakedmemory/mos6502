@@ -10,7 +10,7 @@ pub mod store_ops;
 use jumps::*;
 use load_ops::*;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum AddressingMode {
     Absolute,
     AbsoluteX,
