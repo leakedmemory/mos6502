@@ -23,6 +23,7 @@ pub enum AddressingMode {
     Relative,
     ZeroPage,
     ZeroPageX,
+    ZeroPageY,
 }
 
 #[derive(Debug, TryFromPrimitive, IntoPrimitive)]
@@ -128,10 +129,14 @@ impl InstructionDecoder {
     pub fn from_byte(byte: u8) -> Box<dyn Instruction> {
         let opcode = Opcode::try_from(byte).expect(&format!("Invalid opcode: {:#04X}", byte));
         match opcode {
+            // JMP
             Opcode::JMPAbs => Box::new(JMP::new(AddressingMode::Absolute)),
             Opcode::JMPInd => Box::new(JMP::new(AddressingMode::IndirectX)),
+
+            // JSR
             Opcode::JSR => Box::new(JSR::new()),
-            Opcode::RTS => Box::new(RTS::new()),
+
+            // LDA
             Opcode::LDAImm => Box::new(LDA::new(AddressingMode::Immediate)),
             Opcode::LDAZpg => Box::new(LDA::new(AddressingMode::ZeroPage)),
             Opcode::LDAZpx => Box::new(LDA::new(AddressingMode::ZeroPageX)),
@@ -140,6 +145,17 @@ impl InstructionDecoder {
             Opcode::LDAAby => Box::new(LDA::new(AddressingMode::AbsoluteY)),
             Opcode::LDAIdx => Box::new(LDA::new(AddressingMode::IndirectX)),
             Opcode::LDAIdy => Box::new(LDA::new(AddressingMode::IndirectY)),
+
+            // LDX
+            Opcode::LDXImm => Box::new(LDX::new(AddressingMode::Immediate)),
+            Opcode::LDXZpg => Box::new(LDX::new(AddressingMode::ZeroPage)),
+            Opcode::LDXZpy => Box::new(LDX::new(AddressingMode::ZeroPageY)),
+            Opcode::LDXAbs => Box::new(LDX::new(AddressingMode::Absolute)),
+            Opcode::LDXAby => Box::new(LDX::new(AddressingMode::AbsoluteY)),
+
+            // RTS
+            Opcode::RTS => Box::new(RTS::new()),
+
             _ => unreachable!(),
         }
     }
