@@ -29,26 +29,20 @@ impl JMP {
     ///
     /// Panics if an invalid addressing mode is provided.
     pub fn new(addr_mode: AddressingMode) -> Self {
-        let bytes = 3;
-        let opcode;
-        let cycles;
         match addr_mode {
-            AddressingMode::Absolute => {
-                opcode = Opcode::JMPAbs.into();
-                cycles = 3;
-            }
-            AddressingMode::IndirectX => {
-                opcode = Opcode::JMPInd.into();
-                cycles = 5;
-            }
+            AddressingMode::Absolute => Self {
+                addr_mode,
+                opcode: Opcode::JMPAbs.into(),
+                bytes: 3,
+                cycles: 3,
+            },
+            AddressingMode::Indirect => Self {
+                addr_mode,
+                opcode: Opcode::JMPInd.into(),
+                bytes: 3,
+                cycles: 5,
+            },
             _ => panic!("Invalid addressing mode for this instruction"),
-        }
-
-        Self {
-            addr_mode,
-            opcode,
-            bytes,
-            cycles,
         }
     }
 
@@ -65,7 +59,7 @@ impl JMP {
     ///
     /// - Bytes: 3
     /// - Cycles: 5
-    fn indirect_x(&self, cpu: &mut CPU) {
+    fn indirect(&self, cpu: &mut CPU) {
         // hardware bug if LSB is 0xFF
         // http://www.6502.org/users/obelisk/6502/reference.html#JMP
         let ind_addr = cpu.fetch_addr();
@@ -86,7 +80,7 @@ impl Instruction for JMP {
     fn execute(&self, cpu: &mut CPU) {
         match self.addr_mode {
             AddressingMode::Absolute => self.absolute(cpu),
-            AddressingMode::IndirectX => self.indirect_x(cpu),
+            AddressingMode::Indirect => self.indirect(cpu),
             _ => unreachable!(),
         }
     }
@@ -114,7 +108,6 @@ impl Instruction for JMP {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cpu::{
         CPU, CPU_DEFAULT_STATUS, POWER_ON_RESET_ADDR_L, UNRESERVED_MEMORY_ADDR_START,
     };
@@ -136,13 +129,15 @@ mod tests {
         cpu.reset();
 
         let init_cycles = cpu.cycles;
+        let init_status = cpu.status;
         cpu.execute_next_instruction();
         assert_eq!(cpu.pc, 0x3042);
         assert_eq!(cpu.memory.read(cpu.pc), Opcode::LDAImm.into());
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
-        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+        assert_eq!(cpu.status, init_status);
     }
 
+    // TODO: split this test
     #[test]
     fn jmp_ind_test() {
         const CYCLES: u64 = 5;
