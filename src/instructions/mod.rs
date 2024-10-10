@@ -8,6 +8,7 @@ pub mod stack_ops;
 pub mod store_ops;
 
 use jumps::*;
+use load_ops::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum AddressingMode {
@@ -125,12 +126,20 @@ pub struct InstructionDecoder;
 
 impl InstructionDecoder {
     pub fn from_byte(byte: u8) -> Box<dyn Instruction> {
-        let opcode = Opcode::try_from(byte).expect(&format!("Invalid opcode: {:#4X}", byte));
+        let opcode = Opcode::try_from(byte).expect(&format!("Invalid opcode: {:#04X}", byte));
         match opcode {
             Opcode::JMPAbs => Box::new(JMP::new(AddressingMode::Absolute)),
             Opcode::JMPInd => Box::new(JMP::new(AddressingMode::IndirectX)),
             Opcode::JSR => Box::new(JSR::new()),
             Opcode::RTS => Box::new(RTS::new()),
+            Opcode::LDAImm => Box::new(LDA::new(AddressingMode::Immediate)),
+            Opcode::LDAZpg => Box::new(LDA::new(AddressingMode::ZeroPage)),
+            Opcode::LDAZpx => Box::new(LDA::new(AddressingMode::ZeroPageX)),
+            Opcode::LDAAbs => Box::new(LDA::new(AddressingMode::Absolute)),
+            Opcode::LDAAbx => Box::new(LDA::new(AddressingMode::AbsoluteX)),
+            Opcode::LDAAby => Box::new(LDA::new(AddressingMode::AbsoluteY)),
+            Opcode::LDAIdx => Box::new(LDA::new(AddressingMode::IndirectX)),
+            Opcode::LDAIdy => Box::new(LDA::new(AddressingMode::IndirectY)),
             _ => unreachable!(),
         }
     }
