@@ -18,6 +18,7 @@ pub enum AddressingMode {
     Accumulator,
     Immediate,
     Implied,
+    Indirect,
     IndirectX,
     IndirectY,
     Relative,
@@ -131,7 +132,7 @@ impl InstructionDecoder {
         match opcode {
             // JMP
             Opcode::JMPAbs => Box::new(JMP::new(AddressingMode::Absolute)),
-            Opcode::JMPInd => Box::new(JMP::new(AddressingMode::IndirectX)),
+            Opcode::JMPInd => Box::new(JMP::new(AddressingMode::Indirect)),
 
             // JSR
             Opcode::JSR => Box::new(JSR::new()),
