@@ -1,17 +1,11 @@
-use std::convert::TryFrom;
-
-use num_enum::TryFromPrimitive;
-
-use crate::instructions::jumps::*;
-use crate::instructions::load_ops::*;
-use crate::instructions::stack_ops::*;
-use crate::instructions::store_ops::*;
+use crate::instructions::InstructionDecoder;
 use crate::memory::Memory;
 
 pub(crate) const CSF_ZERO: u8 = 0x02;
 pub(crate) const CSF_NEGATIVE: u8 = 0x80;
 
-pub(crate) const SYS_STACK_ADDR_END: u16 = 0x100;
+pub(crate) const SYS_STACK_ADDR_START: u16 = 0x01FF;
+pub(crate) const SYS_STACK_ADDR_END: u16 = 0x0100;
 pub(crate) const UNRESERVED_MEMORY_ADDR_START: u16 = 0x0200;
 pub(crate) const POWER_ON_RESET_ADDR_L: u16 = 0xFFFC;
 pub(crate) const POWER_ON_RESET_ADDR_H: u16 = 0xFFFD;
@@ -21,81 +15,6 @@ pub(crate) const CPU_DEFAULT_X: u8 = 0;
 pub(crate) const CPU_DEFAULT_Y: u8 = 0;
 pub(crate) const CPU_DEFAULT_SP: u8 = 0xFF;
 pub(crate) const CPU_DEFAULT_STATUS: u8 = 0x20;
-
-#[derive(Debug, TryFromPrimitive)]
-#[repr(u8)]
-pub enum Opcode {
-    // JMP
-    JMPAbs = 0x4C,
-    JMPInd = 0x6C,
-
-    // JSR
-    JSR = 0x20,
-
-    // LDA
-    LDAImm = 0xA9,
-    LDAZpg = 0xA5,
-    LDAZpx = 0xB5,
-    LDAAbs = 0xAD,
-    LDAAbx = 0xBD,
-    LDAAby = 0xB9,
-    LDAIdx = 0xA1,
-    LDAIdy = 0xB1,
-
-    // LDX
-    LDXImm = 0xA2,
-    LDXZpg = 0xA6,
-    LDXZpy = 0xB6,
-    LDXAbs = 0xAE,
-    LDXAby = 0xBE,
-
-    // LDY
-    LDYImm = 0xA0,
-    LDYZpg = 0xA4,
-    LDYZpx = 0xB4,
-    LDYAbs = 0xAC,
-    LDYAbx = 0xBC,
-
-    // PHA
-    PHA = 0x48,
-
-    // PHP
-    PHP = 0x08,
-
-    // PLA
-    PLA = 0x68,
-
-    // PLP
-    PLP = 0x28,
-
-    // RTS
-    RTS = 0x60,
-
-    // STA
-    STAZpg = 0x85,
-    STAZpx = 0x95,
-    STAAbs = 0x8D,
-    STAAbx = 0x9D,
-    STAAby = 0x99,
-    STAIdx = 0x81,
-    STAIdy = 0x91,
-
-    // STX
-    STXZpg = 0x86,
-    STXZpy = 0x96,
-    STXAbs = 0x8E,
-
-    // STY
-    STYZpg = 0x84,
-    STYZpx = 0x94,
-    STYAbs = 0x8C,
-
-    // TSX
-    TSX = 0xBA,
-
-    // TXS
-    TXS = 0x9A,
-}
 
 pub struct CPU {
     pub(crate) acc: u8,
@@ -135,87 +54,15 @@ impl CPU {
 
     pub fn run(&mut self) -> ! {
         loop {
+            // separated function to facilitate tests
             self.execute_next_instruction()
         }
     }
 
     pub(crate) fn execute_next_instruction(&mut self) {
-        let opcode_byte = self.fetch_byte();
-        let opcode =
-            Opcode::try_from(opcode_byte).expect(&format!("Invalid opcode: {:#04X}", opcode_byte));
-
-        match opcode {
-            // JMP
-            Opcode::JMPAbs => jmp_abs(self),
-            Opcode::JMPInd => jmp_ind(self),
-
-            // JSR
-            Opcode::JSR => jsr(self),
-
-            // LDA
-            Opcode::LDAImm => lda_immediate(self),
-            Opcode::LDAZpg => lda_zero_page(self),
-            Opcode::LDAZpx => lda_zero_page_x(self),
-            Opcode::LDAAbs => lda_absolute(self),
-            Opcode::LDAAbx => lda_absolute_x(self),
-            Opcode::LDAAby => lda_absolute_y(self),
-            Opcode::LDAIdx => lda_indirect_x(self),
-            Opcode::LDAIdy => lda_indirect_y(self),
-
-            // LDX
-            Opcode::LDXImm => ldx_immediate(self),
-            Opcode::LDXZpg => ldx_zero_page(self),
-            Opcode::LDXZpy => ldx_zero_page_y(self),
-            Opcode::LDXAbs => ldx_absolute(self),
-            Opcode::LDXAby => ldx_absolute_y(self),
-
-            // LDY
-            Opcode::LDYImm => ldy_immediate(self),
-            Opcode::LDYZpg => ldy_zero_page(self),
-            Opcode::LDYZpx => ldy_zero_page_x(self),
-            Opcode::LDYAbs => ldy_absolute(self),
-            Opcode::LDYAbx => ldy_absolute_x(self),
-
-            // PHA
-            Opcode::PHA => pha(self),
-
-            // PHS
-            Opcode::PHP => php(self),
-
-            // PLA
-            Opcode::PLA => pla(self),
-
-            // PLP
-            Opcode::PLP => plp(self),
-
-            // RTS
-            Opcode::RTS => rts(self),
-
-            // STA
-            Opcode::STAZpg => sta_zero_page(self),
-            Opcode::STAZpx => sta_zero_page_x(self),
-            Opcode::STAAbs => sta_absolute(self),
-            Opcode::STAAbx => sta_absolute_x(self),
-            Opcode::STAAby => sta_absolute_y(self),
-            Opcode::STAIdx => sta_indirect_x(self),
-            Opcode::STAIdy => sta_indirect_y(self),
-
-            // STX
-            Opcode::STXZpg => stx_zero_page(self),
-            Opcode::STXZpy => stx_zero_page_y(self),
-            Opcode::STXAbs => stx_absolute(self),
-
-            // STY
-            Opcode::STYZpg => sty_zero_page(self),
-            Opcode::STYZpx => sty_zero_page_x(self),
-            Opcode::STYAbs => sty_absolute(self),
-
-            // TSX
-            Opcode::TSX => tsx(self),
-
-            // TXS
-            Opcode::TXS => txs(self),
-        }
+        let opcode = self.fetch_byte();
+        let instruction = InstructionDecoder::from_byte(opcode);
+        instruction.execute(self);
     }
 
     #[inline]
