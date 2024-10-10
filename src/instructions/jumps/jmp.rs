@@ -3,9 +3,18 @@ use crate::instructions::{AddressingMode, Instruction, Opcode};
 
 /// Sets the program counter to the address specified by the operand.
 ///
-/// bytes: 3
-/// cycles: 3-5
-/// flags affected: none
+/// # Attributes
+///
+/// - Bytes: 3
+/// - Cycles: 3-5
+/// - Flags affected: none
+///
+/// # Addressing Modes
+///
+/// Supported addressing mode(s):
+///
+/// - Absolute
+/// - Indirect
 pub struct JMP {
     addr_mode: AddressingMode,
     opcode: u8,
@@ -14,11 +23,11 @@ pub struct JMP {
 }
 
 impl JMP {
-    /// Constructs a new `JMP` instruction
+    /// Constructs a new `JMP` instruction.
     ///
     /// # Panics
     ///
-    /// Panics if an invalid addressing mode is provided
+    /// Panics if an invalid addressing mode is provided.
     pub fn new(addr_mode: AddressingMode) -> Self {
         let bytes = 3;
         let opcode;
@@ -32,7 +41,7 @@ impl JMP {
                 opcode = Opcode::JMPInd.into();
                 cycles = 5;
             }
-            _ => unreachable!("Invalid addressing mode for this instruction"),
+            _ => panic!("Invalid addressing mode for this instruction"),
         }
 
         Self {
@@ -43,11 +52,19 @@ impl JMP {
         }
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 3
+    /// - Cycles: 3
     #[inline]
     fn absolute(&self, cpu: &mut CPU) {
         cpu.pc = cpu.fetch_addr()
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 3
+    /// - Cycles: 5
     fn indirect_x(&self, cpu: &mut CPU) {
         // hardware bug if LSB is 0xFF
         // http://www.6502.org/users/obelisk/6502/reference.html#JMP
