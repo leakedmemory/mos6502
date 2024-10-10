@@ -12,7 +12,7 @@ use crate::instructions::{AddressingMode, Instruction, Opcode};
 ///
 /// # Addressing Modes
 ///
-/// Supported addressing modes:
+/// Supported addressing mode(s):
 ///
 /// - Immediate
 /// - Zero Page
@@ -25,7 +25,7 @@ use crate::instructions::{AddressingMode, Instruction, Opcode};
 ///
 /// # Cycles
 ///
-/// If a page crossing occurs, the following addressing modes will consume one
+/// If a page crossing occurs, the following addressing mode(s) will consume one
 /// more cycle than what is returned in `self.cycles()`:
 ///
 /// - Absolute,X
@@ -107,17 +107,29 @@ impl LDA {
         }
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 2
+    /// - Cycles: 2
     fn immediate(&self, cpu: &mut CPU) {
         cpu.acc = cpu.fetch_byte();
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 2
+    /// - Cycles: 3
     fn zero_page(&self, cpu: &mut CPU) {
         let addr = cpu.fetch_byte();
         cpu.acc = cpu.read_byte(addr.into());
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 2
+    /// - Cycles: 4
     fn zero_page_x(&self, cpu: &mut CPU) {
         let byte = cpu.fetch_byte();
         let addr = cpu.x.wrapping_add(byte);
@@ -126,12 +138,20 @@ impl LDA {
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 3
+    /// - Cycles: 4
     fn absolute(&self, cpu: &mut CPU) {
         let addr = cpu.fetch_addr();
         cpu.acc = cpu.read_byte(addr);
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 3
+    /// - Cycles: 4 (+1 if page crossed)
     fn absolute_x(&self, cpu: &mut CPU) {
         let abs_addr = cpu.fetch_addr();
         let eff_addr = abs_addr.wrapping_add(cpu.x.into());
@@ -142,6 +162,10 @@ impl LDA {
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 3
+    /// - Cycles: 4 (+1 if page crossed)
     fn absolute_y(&self, cpu: &mut CPU) {
         let abs_addr = cpu.fetch_addr();
         let eff_addr = abs_addr.wrapping_add(cpu.y.into());
@@ -152,6 +176,10 @@ impl LDA {
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 2
+    /// - Cycles: 6
     fn indirect_x(&self, cpu: &mut CPU) {
         let zpg_addr = cpu.fetch_byte();
         let addr = zpg_addr.wrapping_add(cpu.x);
@@ -161,6 +189,10 @@ impl LDA {
         self.set_status_flags(cpu);
     }
 
+    /// Consumes:
+    ///
+    /// - Bytes: 2
+    /// - Cycles: 5 (+1 if page crossed)
     fn indirect_y(&self, cpu: &mut CPU) {
         let zpg_addr = cpu.fetch_byte();
         let addr = cpu.read_addr(zpg_addr.into(), zpg_addr.wrapping_add(1).into());
