@@ -4,9 +4,17 @@ use crate::instructions::{AddressingMode, Instruction, Opcode};
 /// Pushes the address (minus one) of the return point on to the stack and then
 /// sets the program counter to the target memory address.
 ///
-/// bytes: 3
-/// cycles: 6
-/// flags affected: none
+/// # Attributes
+///
+/// - Bytes: 3
+/// - Cycles: 6
+/// - Flags affected: none
+///
+/// # Addressing Modes
+///
+/// Supported addressing mode(s):
+///
+/// - Absolute
 pub struct JSR {
     addr_mode: AddressingMode,
     opcode: u8,
@@ -15,7 +23,7 @@ pub struct JSR {
 }
 
 impl JSR {
-    /// Contructs a new `JSR` instruction
+    /// Contructs a new `JSR` instruction.
     pub fn new() -> Self {
         Self {
             addr_mode: AddressingMode::Absolute,
