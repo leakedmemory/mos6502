@@ -65,7 +65,6 @@ impl Instruction for JSR {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::cpu::{
         CPU, CPU_DEFAULT_SP, CPU_DEFAULT_STATUS, SYS_STACK_ADDR_END, UNRESERVED_MEMORY_ADDR_START,
     };

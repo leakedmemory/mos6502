@@ -126,6 +126,8 @@ pub trait Instruction {
 
 pub struct InstructionDecoder;
 
+// TODO: we should probably have a hashmap of all the instructions variations
+// and only access them by opcode to execute
 impl InstructionDecoder {
     pub fn from_byte(byte: u8) -> Box<dyn Instruction> {
         let opcode = Opcode::try_from(byte).expect(&format!("Invalid opcode: {:#04X}", byte));
@@ -153,6 +155,13 @@ impl InstructionDecoder {
             Opcode::LDXZpy => Box::new(LDX::new(AddressingMode::ZeroPageY)),
             Opcode::LDXAbs => Box::new(LDX::new(AddressingMode::Absolute)),
             Opcode::LDXAby => Box::new(LDX::new(AddressingMode::AbsoluteY)),
+
+            // LDY
+            Opcode::LDYImm => Box::new(LDY::new(AddressingMode::Immediate)),
+            Opcode::LDYZpg => Box::new(LDY::new(AddressingMode::ZeroPage)),
+            Opcode::LDYZpx => Box::new(LDY::new(AddressingMode::ZeroPageX)),
+            Opcode::LDYAbs => Box::new(LDY::new(AddressingMode::Absolute)),
+            Opcode::LDYAbx => Box::new(LDY::new(AddressingMode::AbsoluteX)),
 
             // RTS
             Opcode::RTS => Box::new(RTS::new()),
