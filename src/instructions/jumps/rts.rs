@@ -4,9 +4,17 @@ use crate::instructions::{AddressingMode, Instruction, Opcode};
 /// Used at the end of a subroutine to return to the calling routine. It pulls
 /// the program counter (minus one) from the stack.
 ///
-/// bytes: 1
-/// cycles: 6
-/// flags affected: none
+/// # Attributes
+///
+/// - Bytes: 1
+/// - Cycles: 6
+/// - Flags affected: none
+///
+/// # Addressing Modes:
+///
+/// Supported addressing mode(s):
+///
+/// - Implied
 pub struct RTS {
     addr_mode: AddressingMode,
     opcode: u8,
@@ -15,7 +23,7 @@ pub struct RTS {
 }
 
 impl RTS {
-    /// Constructs a new `RTS` instruction
+    /// Constructs a new `RTS` instruction.
     pub fn new() -> Self {
         Self {
             addr_mode: AddressingMode::Implied,
