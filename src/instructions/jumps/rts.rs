@@ -87,12 +87,13 @@ mod tests {
         cpu.pc = 0x3042;
         cpu.sp = CPU_DEFAULT_SP - 2;
 
-        let rts_cycles = cpu.cycles;
+        let init_cycles = cpu.cycles;
+        let init_status = cpu.status;
         cpu.execute_next_instruction();
         assert_eq!(cpu.pc, MEM_OFFSET + 3);
         assert_eq!(cpu.memory.read(cpu.pc), Opcode::LDYImm.into());
-        assert_eq!(cpu.cycles - rts_cycles, CYCLES);
+        assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.sp, CPU_DEFAULT_SP);
-        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+        assert_eq!(cpu.status, init_status);
     }
 }

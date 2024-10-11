@@ -89,12 +89,13 @@ mod tests {
 
         let init_pc = cpu.pc;
         let init_cycles = cpu.cycles;
+        let init_status = cpu.status;
         cpu.execute_next_instruction();
         assert_eq!(cpu.pc, 0x3042);
         assert_eq!(cpu.memory.read(cpu.pc), Opcode::LDAImm.into());
         assert_eq!(cpu.cycles - init_cycles, CYCLES);
         assert_eq!(cpu.sp, CPU_DEFAULT_SP.wrapping_sub(2));
-        assert_eq!(cpu.status, CPU_DEFAULT_STATUS);
+        assert_eq!(cpu.status, init_status);
 
         let stack_pc_l = cpu
             .memory
