@@ -246,9 +246,7 @@ impl Instruction for LDA {
 
 #[cfg(test)]
 mod tests {
-    use crate::cpu::{
-        CPU, CPU_DEFAULT_STATUS, CSF_NEGATIVE, CSF_ZERO, UNRESERVED_MEMORY_ADDR_START,
-    };
+    use crate::cpu::{CPU, CSF_NEGATIVE, CSF_ZERO, UNRESERVED_MEMORY_ADDR_START};
     use crate::instructions::Opcode;
     use crate::memory::Memory;
 
