@@ -1,2 +1,9 @@
-/target
-Cargo.lock
+.vscode/
+.idea/
+
+*.gcda
+*.gcno
+
+obj/
+tests/main
+libmos6502.a
