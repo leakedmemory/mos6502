@@ -1,0 +1,19 @@
+[pre-commit]
+parallel = true
+
+[pre-commit.commands.test]
+run = "make test"
+glob = "*.go"
+
+[pre-commit.commands.lint]
+run = "golangci-lint run --fix"
+glob = "*.go"
+stage_fixed = true
+
+[pre-commit.commands.typos]
+run = "typos --write-changes {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.lychee]
+run = "lychee --config ./.lychee.toml {staged_files}"
+glob = "*.md"

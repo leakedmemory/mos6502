@@ -1,0 +1,81 @@
+[linters-settings.gci]
+sections = ["standard", "default", "prefix(github.com/leakedmemory/mos6502)"]
+
+[linters-settings.gocritic]
+disabled-checks = ["hugeParam"]
+enabled-tags = ["performance"]
+
+[linters-settings.govet]
+enable = ["shadow"]
+
+[linters-settings.misspell]
+locale = "US"
+
+[[linters-settings.revive.rules]]
+name = "unused-parameter"
+disabled = true
+
+[linters]
+disable-all = true
+enable = [
+    "asasalint",
+    "asciicheck",
+    "bidichk",
+    "bodyclose",
+    "canonicalheader",
+    "containedctx",
+    "contextcheck",
+    "copyloopvar",
+    "decorder",
+    "dogsled",
+    "dupl",
+    "dupword",
+    "durationcheck",
+    "errcheck",
+    "errchkjson",
+    "errname",
+    "errorlint",
+    "exhaustive",
+    "forbidigo",
+    "gci",
+    "goconst",
+    "gocritic",
+    "gocyclo",
+    "godot",
+    "godox",
+    "gofumpt",
+    "goheader",
+    "goimports",
+    "goprintffuncname",
+    "gosec",
+    "gosimple",
+    "govet",
+    "ineffassign",
+    "intrange",
+    "makezero",
+    "mirror",
+    "misspell",
+    "mnd",
+    "musttag",
+    "nestif",
+    "nilnil",
+    "noctx",
+    "nolintlint",
+    "perfsprint",
+    "prealloc",
+    "predeclared",
+    "reassign",
+    "revive",
+    "staticcheck",
+    "tagalign",
+    "tenv",
+    "testableexamples",
+    "thelper",
+    "unconvert",
+    "unparam",
+    "unused",
+    "usestdlibvars",
+    "wastedassign",
+    "whitespace",
+    "wrapcheck"
+]

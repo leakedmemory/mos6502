@@ -1,2 +1,12 @@
-/target
-Cargo.lock
+.vscode/
+.idea/
+
+# test binary, built with "go test -c"
+*.test
+
+go.work
+tmp/
+
+.env
+
+mos6502

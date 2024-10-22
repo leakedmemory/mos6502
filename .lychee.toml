@@ -1,0 +1,2 @@
+max_concurrency = 3
+include_mail = true
