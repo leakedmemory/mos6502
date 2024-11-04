@@ -2,7 +2,7 @@ package cpu
 
 const (
 	ldaImmediateBytes  uint16 = 2
-	ldaImmediateCycles uint64 = 2
+	ldaImmediateCycles uint   = 2
 )
 
 func ldaSetStatusRegister(cpu *CPU) {
@@ -14,7 +14,13 @@ func ldaSetStatusRegister(cpu *CPU) {
 	}
 }
 
-// ldaImmediate consumes 2 bytes and 2 cycles.
+// ldaImmediate loads a byte of memory into the accumulator.
+//
+// Attributes:
+//
+//	Bytes: 2
+//	Cycles: 2
+//	Flags affected: N, Z
 func ldaImmediate(cpu *CPU) {
 	cpu.acc = cpu.fetchByte()
 	ldaSetStatusRegister(cpu)

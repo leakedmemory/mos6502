@@ -6,8 +6,23 @@ import (
 	"github.com/leakedmemory/mos6502/memory"
 )
 
-func TestLDAImmediatePositiveValue(t *testing.T) {
-	acc := byte(0x42)
+type ldaImmediateTest struct {
+	acc    byte
+	sr     byte
+	bytes  uint16
+	cycles uint
+}
+
+func newLDAImmediateTest(acc byte) *ldaImmediateTest {
+	return &ldaImmediateTest{
+		acc:    acc,
+		sr:     defaultSR,
+		bytes:  ldaImmediateBytes,
+		cycles: ldaImmediateCycles,
+	}
+}
+
+func ldaImmediateTestHelper(acc byte) *ldaImmediateTest {
 	offset := unreservedMemoryAddressStart
 	mem := memory.Memory{}
 	mem.Write(byte(ldaImmediateOpcode), offset)
@@ -18,25 +33,45 @@ func TestLDAImmediatePositiveValue(t *testing.T) {
 
 	pcInit := c.pc
 	cyclesInit := c.cycles
-	srInit := c.sr
 
 	c.step()
 
-	if c.acc != acc {
-		t.Errorf("expected acc %q, actual acc %q", acc, c.acc)
+	return &ldaImmediateTest{
+		acc:    c.acc,
+		sr:     c.sr,
+		bytes:  c.pc - pcInit,
+		cycles: c.cycles - cyclesInit,
 	}
+}
 
-	bytesConsumed := c.pc - pcInit
-	if bytesConsumed != ldaImmediateBytes {
-		t.Errorf("bytes consumed: expected %d, actual %d", ldaImmediateBytes, bytesConsumed)
+func TestLDAImmediateWithPositiveValue(t *testing.T) {
+	var acc byte = 0x42
+	expected := newLDAImmediateTest(acc)
+	actual := ldaImmediateTestHelper(acc)
+
+	if *expected != *actual {
+		t.Errorf("expected %+v, actual %+v\n", expected, actual)
 	}
+}
 
-	cyclesConsumed := c.cycles - cyclesInit
-	if cyclesConsumed != ldaImmediateCycles {
-		t.Errorf("cycles consumed: expected %d, actual %d", ldaImmediateCycles, cyclesConsumed)
+func TestLDAImmediateWithNegativeValue(t *testing.T) {
+	var acc byte = 0x82
+	expected := newLDAImmediateTest(acc)
+	expected.sr |= negativeSF
+	actual := ldaImmediateTestHelper(acc)
+
+	if *expected != *actual {
+		t.Errorf("expected %+v, actual %+v\n", expected, actual)
 	}
+}
 
-	if srInit != c.sr {
-		t.Errorf("status register: expected %b, actual %b", srInit, c.sr)
+func TestLDAImmediateWithZero(t *testing.T) {
+	var acc byte = 0x00
+	expected := newLDAImmediateTest(acc)
+	expected.sr |= zeroSF
+	actual := ldaImmediateTestHelper(acc)
+
+	if *expected != *actual {
+		t.Errorf("expected %+v, actual %+v\n", expected, actual)
 	}
 }

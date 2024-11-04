@@ -7,8 +7,14 @@ import (
 const unreservedMemoryAddressStart uint16 = 0x0200
 
 const (
-	zeroSF     uint8 = 0x02
-	negativeSF uint8 = 0x80
+	defaultSP byte   = 0xFF
+	defaultPC uint16 = unreservedMemoryAddressStart
+	defaultSR byte   = 0x20
+)
+
+const (
+	zeroSF     byte = 0x02
+	negativeSF byte = 0x80
 )
 
 type (
@@ -24,7 +30,7 @@ type CPU struct {
 	pc  uint16
 	// N, V, 1, B, D, I, Z, C
 	sr     byte
-	cycles uint64
+	cycles uint
 	mem    *memory.Memory
 }
 
@@ -33,9 +39,9 @@ func (c *CPU) Reset() {
 	c.acc = 0
 	c.x = 0
 	c.y = 0
-	c.sp = 0xFF
-	c.pc = unreservedMemoryAddressStart
-	c.sr = 0x20
+	c.sp = defaultSP
+	c.pc = defaultPC
+	c.sr = defaultSR
 	c.cycles = 7
 }
 
